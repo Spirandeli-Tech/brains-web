@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Form, Input, Modal, message } from 'antd'
 import { customersClient } from '@/lib/clients/customers'
 import type { CustomerData } from '@/lib/clients/customers'
@@ -7,20 +7,45 @@ interface CreateCustomerModalProps {
   open: boolean
   onClose: () => void
   onSuccess: (customer: CustomerData) => void
+  customer?: CustomerData | null
 }
 
-export function CreateCustomerModal({ open, onClose, onSuccess }: CreateCustomerModalProps) {
+export function CreateCustomerModal({ open, onClose, onSuccess, customer }: CreateCustomerModalProps) {
   const [form] = Form.useForm()
   const [submitting, setSubmitting] = useState(false)
+  const isEditing = !!customer
+
+  useEffect(() => {
+    if (open && customer) {
+      form.setFieldsValue({
+        legal_name: customer.legal_name,
+        email: customer.email,
+        phone: customer.phone,
+        address_line_1: customer.address_line_1,
+        city: customer.city,
+        state: customer.state,
+        zip: customer.zip,
+        country: customer.country,
+      })
+    }
+  }, [open, customer, form])
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
       setSubmitting(true)
-      const customer = await customersClient.createCustomer(values)
-      message.success('Customer created')
-      form.resetFields()
-      onSuccess(customer)
+
+      if (isEditing) {
+        const updated = await customersClient.updateCustomer(customer.id, values)
+        message.success('Customer updated')
+        form.resetFields()
+        onSuccess(updated)
+      } else {
+        const created = await customersClient.createCustomer(values)
+        message.success('Customer created')
+        form.resetFields()
+        onSuccess(created)
+      }
     } catch (error) {
       if (error instanceof Error) {
         message.error(error.message)
@@ -37,12 +62,12 @@ export function CreateCustomerModal({ open, onClose, onSuccess }: CreateCustomer
 
   return (
     <Modal
-      title="New Customer"
+      title={isEditing ? 'Edit Customer' : 'New Customer'}
       open={open}
       onOk={handleSubmit}
       onCancel={handleCancel}
       confirmLoading={submitting}
-      okText="Create"
+      okText={isEditing ? 'Save' : 'Create'}
       destroyOnClose
     >
       <Form form={form} layout="vertical" className="mt-4">

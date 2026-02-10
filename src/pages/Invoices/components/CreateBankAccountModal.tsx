@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Collapse, Form, Input, Modal, message } from 'antd'
 import { bankAccountsClient } from '@/lib/clients/bank-accounts'
 import type { BankAccountData } from '@/lib/clients/bank-accounts'
@@ -7,20 +7,45 @@ interface CreateBankAccountModalProps {
   open: boolean
   onClose: () => void
   onSuccess: (bankAccount: BankAccountData) => void
+  bankAccount?: BankAccountData | null
 }
 
-export function CreateBankAccountModal({ open, onClose, onSuccess }: CreateBankAccountModalProps) {
+export function CreateBankAccountModal({ open, onClose, onSuccess, bankAccount }: CreateBankAccountModalProps) {
   const [form] = Form.useForm()
   const [submitting, setSubmitting] = useState(false)
+  const isEditing = !!bankAccount
+
+  useEffect(() => {
+    if (open && bankAccount) {
+      form.setFieldsValue({
+        label: bankAccount.label,
+        beneficiary_full_name: bankAccount.beneficiary_full_name,
+        beneficiary_full_address: bankAccount.beneficiary_full_address,
+        beneficiary_account_number: bankAccount.beneficiary_account_number,
+        swift_code: bankAccount.swift_code,
+        bank_name: bankAccount.bank_name,
+        bank_address: bankAccount.bank_address,
+        intermediary_bank_info: bankAccount.intermediary_bank_info,
+      })
+    }
+  }, [open, bankAccount, form])
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
       setSubmitting(true)
-      const bankAccount = await bankAccountsClient.createBankAccount(values)
-      message.success('Bank account created')
-      form.resetFields()
-      onSuccess(bankAccount)
+
+      if (isEditing) {
+        const updated = await bankAccountsClient.updateBankAccount(bankAccount.id, values)
+        message.success('Bank account updated')
+        form.resetFields()
+        onSuccess(updated)
+      } else {
+        const created = await bankAccountsClient.createBankAccount(values)
+        message.success('Bank account created')
+        form.resetFields()
+        onSuccess(created)
+      }
     } catch (error) {
       if (error instanceof Error) {
         message.error(error.message)
@@ -37,12 +62,12 @@ export function CreateBankAccountModal({ open, onClose, onSuccess }: CreateBankA
 
   return (
     <Modal
-      title="New Bank Account"
+      title={isEditing ? 'Edit Bank Account' : 'New Bank Account'}
       open={open}
       onOk={handleSubmit}
       onCancel={handleCancel}
       confirmLoading={submitting}
-      okText="Create"
+      okText={isEditing ? 'Save' : 'Create'}
       width={600}
       destroyOnClose
     >

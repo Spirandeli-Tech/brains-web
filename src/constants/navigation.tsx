@@ -1,6 +1,19 @@
-import { DashboardOutlined, FileTextOutlined, TeamOutlined } from '@ant-design/icons'
+import { BankOutlined, DashboardOutlined, FileTextOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons'
 
-export const NAV_OPTIONS = [
+export interface NavChild {
+  label: string
+  icon: React.ReactNode
+  path: string
+}
+
+export interface NavOption {
+  label: string
+  icon: React.ReactNode
+  path: string
+  children?: NavChild[]
+}
+
+export const NAV_OPTIONS: NavOption[] = [
   {
     label: 'Dashboard',
     icon: <DashboardOutlined />,
@@ -10,6 +23,23 @@ export const NAV_OPTIONS = [
     label: 'Invoices',
     icon: <FileTextOutlined />,
     path: '/invoices',
+    children: [
+      {
+        label: 'Invoices',
+        icon: <FileTextOutlined />,
+        path: '/invoices',
+      },
+      {
+        label: 'Customers',
+        icon: <UserOutlined />,
+        path: '/invoices/customers',
+      },
+      {
+        label: 'Bank Accounts',
+        icon: <BankOutlined />,
+        path: '/invoices/bank-accounts',
+      },
+    ],
   },
   {
     label: 'Users',
