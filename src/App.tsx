@@ -1,28 +1,35 @@
-import { ReactNode } from 'react'
 import { ConfigProvider } from 'antd'
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { useAuth } from '@/context/auth'
 import { LoginPage, DashboardPage, LoadingPage } from '@/pages'
+import { UsersPage } from '@/pages/Users'
+import { InvoicesPage } from '@/pages/Invoices'
+import { AppLayout } from '@/components/templates'
 
-type Screen = 'loading' | 'authenticated' | 'login'
-
-const screens: Record<Screen, () => ReactNode> = {
-  loading: LoadingPage,
-  authenticated: DashboardPage,
-  login: LoginPage,
-}
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <AppLayout />,
+    children: [
+      { index: true, element: <Navigate to="/dashboard" replace /> },
+      { path: 'dashboard', element: <DashboardPage /> },
+      { path: 'invoices', element: <InvoicesPage /> },
+      { path: 'users', element: <UsersPage /> },
+    ],
+  },
+  {
+    path: '*',
+    element: <Navigate to="/dashboard" replace />,
+  },
+])
 
 function AppContent() {
   const { loading, authenticated } = useAuth()
 
-  const renderScreen = (): Screen => {
-    if (loading) return 'loading'
-    if (authenticated) return 'authenticated'
-    return 'login'
-  }
+  if (loading) return <LoadingPage />
+  if (!authenticated) return <LoginPage />
 
-  const SelectedScreen = screens[renderScreen()]
-
-  return <SelectedScreen />
+  return <RouterProvider router={router} />
 }
 
 function App() {

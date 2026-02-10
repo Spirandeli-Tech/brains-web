@@ -7,7 +7,7 @@ import {
   type User,
 } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
-import { authApi, type UserData } from '@/lib/api'
+import { authClient, type UserData } from '@/lib/clients/auth'
 import { AuthContext } from './auth-context'
 import type { AuthUser, AuthContextType, SignUpData } from './types'
 import { STORAGE_KEYS } from '@/constants/storage-keys'
@@ -23,6 +23,7 @@ const mapFirebaseUser = (firebaseUser: User): AuthUser => ({
   photoURL: firebaseUser.photoURL,
   firstName: null,
   lastName: null,
+  role: null,
 })
 
 const mapBackendUser = (backendUser: UserData): AuthUser => ({
@@ -32,6 +33,7 @@ const mapBackendUser = (backendUser: UserData): AuthUser => ({
   photoURL: null,
   firstName: backendUser.first_name,
   lastName: backendUser.last_name,
+  role: backendUser.role?.name ?? null,
 })
 
 const saveUserToStorage = (user: AuthUser | null) => {
@@ -73,7 +75,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
           const idToken = await firebaseUser.getIdToken()
           saveTokenToStorage(idToken)
 
-          const backendUser = await authApi.login({ firebase_token: idToken })
+          const backendUser = await authClient.login({ firebase_token: idToken })
           const mappedUser = mapBackendUser(backendUser)
           setUser(mappedUser)
           saveUserToStorage(mappedUser)
@@ -102,7 +104,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
       const idToken = await userCredential.user.getIdToken()
       saveTokenToStorage(idToken)
 
-      const backendUser = await authApi.login({ firebase_token: idToken })
+      const backendUser = await authClient.login({ firebase_token: idToken })
       const mappedUser = mapBackendUser(backendUser)
       setUser(mappedUser)
       saveUserToStorage(mappedUser)
@@ -123,7 +125,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
       const idToken = await userCredential.user.getIdToken()
       saveTokenToStorage(idToken)
 
-      const backendUser = await authApi.register({
+      const backendUser = await authClient.register({
         firebase_token: idToken,
         first_name: firstName,
         last_name: lastName,

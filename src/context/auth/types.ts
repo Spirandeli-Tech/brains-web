@@ -5,6 +5,7 @@ export interface AuthUser {
   photoURL: string | null
   firstName: string | null
   lastName: string | null
+  role: string | null
 }
 
 export interface SignUpData {
