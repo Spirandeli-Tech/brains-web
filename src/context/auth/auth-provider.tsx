@@ -1,4 +1,4 @@
-import { useEffect, useState, ReactNode, FC, useContext } from 'react'
+import { useEffect, useState, useRef, ReactNode, FC, useContext } from 'react'
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -7,8 +7,9 @@ import {
   type User,
 } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
+import { authApi, type UserData } from '@/lib/api'
 import { AuthContext } from './auth-context'
-import type { AuthUser, AuthContextType } from './types'
+import type { AuthUser, AuthContextType, SignUpData } from './types'
 import { STORAGE_KEYS } from '@/constants/storage-keys'
 
 interface AuthProviderProps {
@@ -20,6 +21,17 @@ const mapFirebaseUser = (firebaseUser: User): AuthUser => ({
   email: firebaseUser.email,
   displayName: firebaseUser.displayName,
   photoURL: firebaseUser.photoURL,
+  firstName: null,
+  lastName: null,
+})
+
+const mapBackendUser = (backendUser: UserData): AuthUser => ({
+  id: String(backendUser.id),
+  email: backendUser.email,
+  displayName: `${backendUser.first_name} ${backendUser.last_name}`,
+  photoURL: null,
+  firstName: backendUser.first_name,
+  lastName: backendUser.last_name,
 })
 
 const saveUserToStorage = (user: AuthUser | null) => {
@@ -27,6 +39,14 @@ const saveUserToStorage = (user: AuthUser | null) => {
     localStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user))
   } else {
     localStorage.removeItem(STORAGE_KEYS.AUTH_USER)
+  }
+}
+
+const saveTokenToStorage = (token: string | null) => {
+  if (token) {
+    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token)
+  } else {
+    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN)
   }
 }
 
@@ -39,16 +59,34 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(getUserFromStorage())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const skipAuthStateSync = useRef(false)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (skipAuthStateSync.current) {
+        setLoading(false)
+        return
+      }
+
       if (firebaseUser) {
-        const mappedUser = mapFirebaseUser(firebaseUser)
-        setUser(mappedUser)
-        saveUserToStorage(mappedUser)
+        try {
+          const idToken = await firebaseUser.getIdToken()
+          saveTokenToStorage(idToken)
+
+          const backendUser = await authApi.login({ firebase_token: idToken })
+          const mappedUser = mapBackendUser(backendUser)
+          setUser(mappedUser)
+          saveUserToStorage(mappedUser)
+        } catch {
+          // Backend login failed (user might not be registered yet, or backend is down)
+          const mappedUser = mapFirebaseUser(firebaseUser)
+          setUser(mappedUser)
+          saveUserToStorage(mappedUser)
+        }
       } else {
         setUser(null)
         saveUserToStorage(null)
+        saveTokenToStorage(null)
       }
       setLoading(false)
     })
@@ -58,23 +96,48 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
 
   const signInWithEmail = async (email: string, password: string) => {
     setError(null)
+    skipAuthStateSync.current = true
     try {
-      await signInWithEmailAndPassword(auth, email, password)
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      const idToken = await userCredential.user.getIdToken()
+      saveTokenToStorage(idToken)
+
+      const backendUser = await authApi.login({ firebase_token: idToken })
+      const mappedUser = mapBackendUser(backendUser)
+      setUser(mappedUser)
+      saveUserToStorage(mappedUser)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in'
       setError(errorMessage)
       throw err
+    } finally {
+      skipAuthStateSync.current = false
     }
   }
 
-  const signUpWithEmail = async (email: string, password: string) => {
+  const signUpWithEmail = async ({ email, password, firstName, lastName }: SignUpData) => {
     setError(null)
+    skipAuthStateSync.current = true
     try {
-      await createUserWithEmailAndPassword(auth, email, password)
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      const idToken = await userCredential.user.getIdToken()
+      saveTokenToStorage(idToken)
+
+      const backendUser = await authApi.register({
+        firebase_token: idToken,
+        first_name: firstName,
+        last_name: lastName,
+      })
+
+      const mappedUser = mapBackendUser(backendUser)
+      setUser(mappedUser)
+      saveUserToStorage(mappedUser)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign up'
       setError(errorMessage)
       throw err
+    } finally {
+      skipAuthStateSync.current = false
     }
   }
 
@@ -84,6 +147,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
       await firebaseSignOut(auth)
       setUser(null)
       saveUserToStorage(null)
+      saveTokenToStorage(null)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign out'
       setError(errorMessage)

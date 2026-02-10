@@ -9,6 +9,8 @@ import { FormField } from '@/components/molecules'
 export interface LoginFormData {
   email: string
   password: string
+  firstName: string
+  lastName: string
   remember: boolean
 }
 
@@ -21,6 +23,8 @@ export function LoginForm(_props?: LoginFormProps) {
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: '',
+    firstName: '',
+    lastName: '',
     remember: false,
   })
   const [loading, setLoading] = useState(false)
@@ -48,7 +52,12 @@ export function LoginForm(_props?: LoginFormProps) {
     setLoading(true)
     try {
       if (isSignUp) {
-        await signUpWithEmail(formData.email, formData.password)
+        await signUpWithEmail({
+          email: formData.email,
+          password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+        })
         message.success('Account created successfully!')
       } else {
         await signInWithEmail(formData.email, formData.password)
@@ -76,6 +85,30 @@ export function LoginForm(_props?: LoginFormProps) {
       </p>
 
       <form onSubmit={handleSubmit}>
+        {isSignUp && (
+          <>
+            <FormField
+              label="First Name"
+              name="firstName"
+              type="text"
+              required
+              placeholder="John"
+              value={formData.firstName}
+              onChange={handleInputChange}
+            />
+
+            <FormField
+              label="Last Name"
+              name="lastName"
+              type="text"
+              required
+              placeholder="Doe"
+              value={formData.lastName}
+              onChange={handleInputChange}
+            />
+          </>
+        )}
+
         <FormField
           label="Email Address"
           name="email"
