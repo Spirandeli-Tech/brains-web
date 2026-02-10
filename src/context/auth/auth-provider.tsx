@@ -2,6 +2,8 @@ import { useEffect, useState, useRef, ReactNode, FC, useContext } from 'react'
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   type User,
@@ -143,6 +145,40 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     }
   }
 
+  const signInWithGoogle = async () => {
+    setError(null)
+    skipAuthStateSync.current = true
+    try {
+      const userCredential = await signInWithPopup(auth, new GoogleAuthProvider())
+      const idToken = await userCredential.user.getIdToken()
+      saveTokenToStorage(idToken)
+
+      let backendUser: UserData
+      try {
+        backendUser = await authClient.login({ firebase_token: idToken })
+      } catch {
+        const displayName = userCredential.user.displayName ?? ''
+        const [firstName = '', ...lastParts] = displayName.split(' ')
+        const lastName = lastParts.join(' ') || ''
+        backendUser = await authClient.register({
+          firebase_token: idToken,
+          first_name: firstName,
+          last_name: lastName,
+        })
+      }
+
+      const mappedUser = mapBackendUser(backendUser)
+      setUser(mappedUser)
+      saveUserToStorage(mappedUser)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google'
+      setError(errorMessage)
+      throw err
+    } finally {
+      skipAuthStateSync.current = false
+    }
+  }
+
   const signOut = async () => {
     setError(null)
     try {
@@ -162,6 +198,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     loading,
     authenticated: !!user,
     signInWithEmail,
+    signInWithGoogle,
     signUpWithEmail,
     signOut,
     error,

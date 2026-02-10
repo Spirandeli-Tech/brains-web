@@ -20,6 +20,7 @@ export interface AuthContextType {
   loading: boolean
   authenticated: boolean
   signInWithEmail: (email: string, password: string) => Promise<void>
+  signInWithGoogle: () => Promise<void>
   signUpWithEmail: (data: SignUpData) => Promise<void>
   signOut: () => Promise<void>
   error: string | null
