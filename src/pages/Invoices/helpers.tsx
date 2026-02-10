@@ -1,7 +1,9 @@
-import { Button, Tag } from 'antd'
-import { DeleteOutlined } from '@ant-design/icons'
+import { pdf } from '@react-pdf/renderer'
+import { Button, Space, Tag } from 'antd'
+import { DeleteOutlined, DownloadOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import type { InvoiceListItem } from '@/lib/clients/invoices'
+import type { InvoiceData, InvoiceListItem } from '@/lib/clients/invoices'
+import { InvoicePdf } from './components/InvoicePdf'
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'default',
@@ -14,7 +16,20 @@ export function formatCurrency(amount: number, currency: string): string {
   return `${currency} ${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
-export function getInvoiceColumns(onDelete: (invoice: InvoiceListItem) => void): ColumnsType<InvoiceListItem> {
+export async function downloadInvoicePdf(invoice: InvoiceData): Promise<void> {
+  const blob = await pdf(<InvoicePdf invoice={invoice} />).toBlob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${invoice.invoice_number}.pdf`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+export function getInvoiceColumns(
+  onDelete: (invoice: InvoiceListItem) => void,
+  onDownload: (invoice: InvoiceListItem) => void,
+): ColumnsType<InvoiceListItem> {
   return [
     {
       title: 'Invoice #',
@@ -56,12 +71,19 @@ export function getInvoiceColumns(onDelete: (invoice: InvoiceListItem) => void):
       title: 'Actions',
       key: 'actions',
       render: (_, record) => (
-        <Button
-          type="text"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => onDelete(record)}
-        />
+        <Space>
+          <Button
+            type="text"
+            icon={<DownloadOutlined />}
+            onClick={() => onDownload(record)}
+          />
+          <Button
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => onDelete(record)}
+          />
+        </Space>
       ),
     },
   ]

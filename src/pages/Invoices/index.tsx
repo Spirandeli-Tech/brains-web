@@ -4,7 +4,7 @@ import { ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { invoicesClient } from "@/lib/clients/invoices";
 import type { InvoiceListItem } from "@/lib/clients/invoices";
 import { CreateInvoiceModal } from "./components/CreateInvoiceModal";
-import { getInvoiceColumns } from "./helpers";
+import { downloadInvoicePdf, getInvoiceColumns } from "./helpers";
 
 export function InvoicesPage() {
   const [invoices, setInvoices] = useState<InvoiceListItem[]>([]);
@@ -50,7 +50,18 @@ export function InvoicesPage() {
     });
   };
 
-  const columns = getInvoiceColumns(handleDelete);
+  const handleDownload = async (invoice: InvoiceListItem) => {
+    try {
+      const full = await invoicesClient.getInvoice(invoice.id);
+      await downloadInvoicePdf(full);
+    } catch (error) {
+      message.error(
+        error instanceof Error ? error.message : "Failed to download invoice",
+      );
+    }
+  };
+
+  const columns = getInvoiceColumns(handleDelete, handleDownload);
 
   return (
     <div>
