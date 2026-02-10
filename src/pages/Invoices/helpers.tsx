@@ -48,9 +48,9 @@ export function getInvoiceColumns(onDelete: (invoice: InvoiceListItem) => void):
     },
     {
       title: 'Total',
-      key: 'amount_total',
+      key: 'total_amount',
       align: 'right',
-      render: (_, record) => formatCurrency(record.amount_total, record.currency),
+      render: (_, record) => formatCurrency(record.total_amount, record.currency),
     },
     {
       title: 'Actions',

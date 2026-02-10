@@ -1,16 +1,34 @@
+import type { BankAccountData } from '../bank-accounts/types'
 import type { CustomerData } from '../customers/types'
+
+export interface InvoiceServicePayload {
+  service_title: string
+  service_description?: string
+  amount: number
+  sort_order?: number
+}
+
+export interface InvoiceServiceData {
+  id: string
+  service_title: string
+  service_description: string | null
+  amount: number
+  sort_order: number | null
+  created_at: string
+  updated_at: string
+}
 
 export interface InvoiceData {
   id: string
   invoice_number: string
   customer: CustomerData
+  bank_account: BankAccountData | null
   issue_date: string
   due_date: string
   currency: string
   status: 'draft' | 'sent' | 'paid' | 'void'
-  service_title: string
-  service_description: string
-  amount_total: number
+  total_amount: number
+  services: InvoiceServiceData[]
   notes: string | null
   created_at: string
   updated_at: string
@@ -23,7 +41,7 @@ export interface InvoiceListItem {
   issue_date: string
   due_date: string
   status: 'draft' | 'sent' | 'paid' | 'void'
-  amount_total: number
+  total_amount: number
   currency: string
 }
 
@@ -34,9 +52,8 @@ export interface InvoiceCreatePayload {
   due_date: string
   currency?: string
   status?: string
-  service_title: string
-  service_description: string
-  amount_total: number
+  bank_account_id?: string
+  services: InvoiceServicePayload[]
   notes?: string
 }
 
@@ -47,9 +64,8 @@ export interface InvoiceUpdatePayload {
   due_date?: string
   currency?: string
   status?: string
-  service_title?: string
-  service_description?: string
-  amount_total?: number
+  bank_account_id?: string
+  services?: InvoiceServicePayload[]
   notes?: string
 }
 
