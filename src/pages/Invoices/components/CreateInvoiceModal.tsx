@@ -17,11 +17,11 @@ import type { CustomerData } from "@/lib/clients/customers";
 import { bankAccountsClient } from "@/lib/clients/bank-accounts";
 import type { BankAccountData } from "@/lib/clients/bank-accounts";
 import { invoicesClient } from "@/lib/clients/invoices";
-import type { InvoiceServicePayload } from "@/lib/clients/invoices";
+import type { ServiceData } from "@/lib/clients/services";
 import { formatCurrency } from "../helpers";
 import { CreateCustomerModal } from "./CreateCustomerModal";
 import { CreateBankAccountModal } from "./CreateBankAccountModal";
-import { CreateServiceModal } from "./CreateServiceModal";
+import { ServiceModal } from "./ServiceModal";
 
 const ADD_NEW_CUSTOMER_VALUE = "__add_new__";
 const ADD_NEW_BANK_ACCOUNT_VALUE = "__add_new_bank_account__";
@@ -40,8 +40,11 @@ const STATUS_OPTIONS = [
   { label: "Void", value: "void" },
 ];
 
-interface ServiceRow extends InvoiceServicePayload {
+interface ServiceRow {
   key: string;
+  service_title: string;
+  service_description?: string;
+  amount: number;
 }
 
 interface CreateInvoiceModalProps {
@@ -137,21 +140,20 @@ export function CreateInvoiceModal({
   };
 
   // Service handlers
-  const handleServiceCreated = (service: InvoiceServicePayload) => {
+  const handleServiceCreated = (service: ServiceData) => {
+    const row: ServiceRow = {
+      key: service.id,
+      service_title: service.service_title,
+      service_description: service.service_description ?? undefined,
+      amount: Number(service.amount),
+    };
     if (editingService) {
       setServices((prev) =>
-        prev.map((s) =>
-          s.key === editingService.key
-            ? { ...service, key: editingService.key }
-            : s,
-        ),
+        prev.map((s) => (s.key === editingService.key ? row : s)),
       );
       setEditingService(null);
     } else {
-      setServices((prev) => [
-        ...prev,
-        { ...service, key: crypto.randomUUID() },
-      ]);
+      setServices((prev) => [...prev, row]);
     }
     setServiceModalOpen(false);
   };
@@ -414,13 +416,27 @@ export function CreateInvoiceModal({
         onSuccess={handleBankAccountCreated}
       />
 
-      <CreateServiceModal
+      <ServiceModal
         open={serviceModalOpen}
         onClose={() => {
           setServiceModalOpen(false);
           setEditingService(null);
         }}
         onSuccess={handleServiceCreated}
+        service={
+          editingService
+            ? {
+                id: editingService.key,
+                service_title: editingService.service_title,
+                service_description:
+                  editingService.service_description ?? null,
+                amount: editingService.amount,
+                sort_order: null,
+                created_at: "",
+                updated_at: "",
+              }
+            : null
+        }
       />
     </>
   );

@@ -10,6 +10,7 @@ import { UsersPage } from "@/pages/Users";
 import { InvoicesPage } from "@/pages/Invoices";
 import { CustomersPage } from "@/pages/Customers";
 import { BankAccountsPage } from "@/pages/BankAccounts";
+import { ServicesPage } from "@/pages/Services";
 import { AppLayout } from "@/components/templates";
 
 const router = createBrowserRouter([
@@ -25,6 +26,7 @@ const router = createBrowserRouter([
           { path: "", element: <InvoicesPage /> },
           { path: "customers", element: <CustomersPage /> },
           { path: "bank-accounts", element: <BankAccountsPage /> },
+          { path: "services", element: <ServicesPage /> },
         ],
       },
       { path: "users", element: <UsersPage /> },
