@@ -3,6 +3,7 @@ import { Button, Modal, Table, message } from "antd";
 import { ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { invoicesClient } from "@/lib/clients/invoices";
 import type { InvoiceListItem } from "@/lib/clients/invoices";
+import { PageHeader, DataCard } from "@/components/molecules";
 import { CreateInvoiceModal } from "./components/CreateInvoiceModal";
 import { downloadInvoicePdf, getInvoiceColumns } from "./helpers";
 
@@ -65,17 +66,20 @@ export function InvoicesPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => setCreateModalOpen(true)}
-        >
-          New Invoice
-        </Button>
-      </div>
-      <div className="bg-white rounded-lg shadow p-6">
+      <PageHeader
+        title="Invoices"
+        subtitle="Manage and track all your invoices"
+        actions={
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setCreateModalOpen(true)}
+          >
+            New Invoice
+          </Button>
+        }
+      />
+      <DataCard>
         <Table
           columns={columns}
           dataSource={invoices}
@@ -83,7 +87,7 @@ export function InvoicesPage() {
           loading={loading}
           pagination={{ pageSize: 10 }}
         />
-      </div>
+      </DataCard>
       <CreateInvoiceModal
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}

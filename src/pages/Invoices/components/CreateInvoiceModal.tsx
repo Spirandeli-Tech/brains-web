@@ -53,6 +53,23 @@ interface CreateInvoiceModalProps {
   onSuccess: () => void;
 }
 
+function FormSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mb-5">
+      <h4 className="text-sm font-semibold text-text-primary mb-3 mt-0">
+        {title}
+      </h4>
+      {children}
+    </div>
+  );
+}
+
 export function CreateInvoiceModal({
   open,
   onClose,
@@ -264,19 +281,32 @@ export function CreateInvoiceModal({
   return (
     <>
       <Modal
-        title="New Invoice"
+        title={
+          <span className="text-[22px] font-semibold text-text-primary leading-tight">
+            New Invoice
+          </span>
+        }
         open={open}
-        onOk={handleSubmit}
         onCancel={handleCancel}
-        confirmLoading={submitting}
-        okText="Create"
-        width={720}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button onClick={handleCancel}>Cancel</Button>
+            <Button
+              type="primary"
+              onClick={handleSubmit}
+              loading={submitting}
+            >
+              Create
+            </Button>
+          </div>
+        }
+        width={800}
         destroyOnClose
       >
         <Form
           form={form}
           layout="vertical"
-          className="mt-4"
+          className="mt-3"
           initialValues={{
             currency: "USD",
             status: "draft",
@@ -284,123 +314,148 @@ export function CreateInvoiceModal({
             due_date: dayjs().add(30, "day"),
           }}
         >
-          <Form.Item
-            name="customer_id"
-            label="Customer"
-            rules={[{ required: true, message: "Please select a customer" }]}
-          >
-            <Select
-              placeholder="Select a customer"
-              loading={loadingCustomers}
-              showSearch
-              optionFilterProp="label"
-              onChange={handleCustomerSelect}
-              options={[
-                {
-                  label: (
-                    <span className="text-blue-600 font-medium">
-                      <PlusOutlined className="mr-1" /> Add New Customer
-                    </span>
-                  ),
-                  value: ADD_NEW_CUSTOMER_VALUE,
-                },
-                ...customers.map((c) => ({
-                  label: c.display_name || c.legal_name,
-                  value: c.id,
-                })),
-              ]}
-            />
-          </Form.Item>
-
-          <div className="grid grid-cols-2 gap-4">
+          {/* Customer Section */}
+          <FormSection title="Customer">
             <Form.Item
-              name="issue_date"
-              label="Issue Date"
-              rules={[{ required: true, message: "Issue date is required" }]}
+              name="customer_id"
+              rules={[{ required: true, message: "Please select a customer" }]}
+              className="mb-0"
             >
-              <DatePicker className="w-full" />
-            </Form.Item>
-
-            <Form.Item
-              name="due_date"
-              label="Due Date"
-              rules={[{ required: true, message: "Due date is required" }]}
-            >
-              <DatePicker className="w-full" />
-            </Form.Item>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <Form.Item name="currency" label="Currency">
-              <Select options={CURRENCY_OPTIONS} />
-            </Form.Item>
-
-            <Form.Item name="status" label="Status">
-              <Select options={STATUS_OPTIONS} />
-            </Form.Item>
-
-            <Form.Item name="bank_account_id" label="Bank Account">
               <Select
-                placeholder="Select bank account"
-                loading={loadingBankAccounts}
-                allowClear
+                placeholder="Select a customer"
+                loading={loadingCustomers}
                 showSearch
                 optionFilterProp="label"
-                onChange={handleBankAccountSelect}
+                onChange={handleCustomerSelect}
                 options={[
                   {
                     label: (
-                      <span className="text-blue-600 font-medium">
-                        <PlusOutlined className="mr-1" /> Add New Bank Account
+                      <span className="text-brand-primary font-medium">
+                        <PlusOutlined className="mr-1" /> Add New Customer
                       </span>
                     ),
-                    value: ADD_NEW_BANK_ACCOUNT_VALUE,
+                    value: ADD_NEW_CUSTOMER_VALUE,
                   },
-                  ...bankAccounts.map((ba) => ({
-                    label: ba.label,
-                    value: ba.id,
+                  ...customers.map((c) => ({
+                    label: c.display_name || c.legal_name,
+                    value: c.id,
                   })),
                 ]}
               />
             </Form.Item>
-          </div>
+          </FormSection>
 
-          {/* Services section */}
-          <div className="mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <label className="font-medium">Services</label>
-              <Button
-                type="link"
-                icon={<PlusOutlined />}
-                onClick={() => {
-                  setEditingService(null);
-                  setServiceModalOpen(true);
-                }}
+          {/* Details Section */}
+          <FormSection title="Details">
+            <div className="grid grid-cols-2 gap-4">
+              <Form.Item
+                name="issue_date"
+                label="Issue Date"
+                rules={[{ required: true, message: "Issue date is required" }]}
               >
-                Add Service
-              </Button>
+                <DatePicker className="w-full" />
+              </Form.Item>
+
+              <Form.Item
+                name="due_date"
+                label="Due Date"
+                rules={[{ required: true, message: "Due date is required" }]}
+              >
+                <DatePicker className="w-full" />
+              </Form.Item>
             </div>
 
-            <Table
-              columns={serviceColumns}
-              dataSource={services}
-              rowKey="key"
-              pagination={false}
-              size="small"
-              locale={{ emptyText: "No services added yet" }}
-            />
+            <div className="grid grid-cols-3 gap-3">
+              <Form.Item name="currency" label="Currency">
+                <Select options={CURRENCY_OPTIONS} />
+              </Form.Item>
 
-            <div className="flex justify-end mt-2 text-base font-semibold">
-              Total: {formatCurrency(totalAmount, selectedCurrency)}
+              <Form.Item name="status" label="Status">
+                <Select options={STATUS_OPTIONS} />
+              </Form.Item>
+
+              <Form.Item name="bank_account_id" label="Bank Account">
+                <Select
+                  placeholder="Select bank account"
+                  loading={loadingBankAccounts}
+                  allowClear
+                  showSearch
+                  optionFilterProp="label"
+                  onChange={handleBankAccountSelect}
+                  options={[
+                    {
+                      label: (
+                        <span className="text-brand-primary font-medium">
+                          <PlusOutlined className="mr-1" /> Add New Bank Account
+                        </span>
+                      ),
+                      value: ADD_NEW_BANK_ACCOUNT_VALUE,
+                    },
+                    ...bankAccounts.map((ba) => ({
+                      label: ba.label,
+                      value: ba.id,
+                    })),
+                  ]}
+                />
+              </Form.Item>
+            </div>
+          </FormSection>
+
+          {/* Services Section */}
+          <div className="mb-5">
+            <div className="border border-border-subtle rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-text-primary m-0">
+                  Services
+                </h4>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<PlusOutlined />}
+                  className="!text-brand-primary"
+                  onClick={() => {
+                    setEditingService(null);
+                    setServiceModalOpen(true);
+                  }}
+                >
+                  Add Service
+                </Button>
+              </div>
+
+              {services.length === 0 ? (
+                <div className="py-8 text-center">
+                  <p className="text-text-muted text-sm m-0">
+                    No services added yet
+                  </p>
+                </div>
+              ) : (
+                <Table
+                  columns={serviceColumns}
+                  dataSource={services}
+                  rowKey="key"
+                  pagination={false}
+                  size="small"
+                />
+              )}
+
+              <div className="flex items-center justify-end mt-3 pt-3 border-t border-border-divider gap-2">
+                <span className="text-text-muted text-sm">Total</span>
+                <span className="text-base font-semibold text-text-primary">
+                  {formatCurrency(totalAmount, selectedCurrency)}
+                </span>
+              </div>
             </div>
           </div>
 
-          <Form.Item name="notes" label="Notes">
-            <Input.TextArea
-              rows={2}
-              placeholder="Additional notes (optional)"
-            />
-          </Form.Item>
+          {/* Notes Section */}
+          <FormSection title="Notes">
+            <Form.Item name="notes" className="mb-0">
+              <Input.TextArea
+                rows={2}
+                placeholder="Additional notes (optional)"
+              />
+            </Form.Item>
+          </FormSection>
         </Form>
       </Modal>
 

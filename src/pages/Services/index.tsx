@@ -9,6 +9,7 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import { servicesClient } from "@/lib/clients/services";
 import type { ServiceData } from "@/lib/clients/services";
+import { PageHeader, DataCard } from "@/components/molecules";
 import { ServiceModal } from "@/pages/Invoices/components/ServiceModal";
 
 function formatAmount(amount: number): string {
@@ -137,13 +138,20 @@ export function ServicesPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Services</h1>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-          New Service
-        </Button>
-      </div>
-      <div className="bg-white rounded-lg shadow p-6">
+      <PageHeader
+        title="Services"
+        subtitle="Manage your service catalog"
+        actions={
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleCreate}
+          >
+            New Service
+          </Button>
+        }
+      />
+      <DataCard>
         <Table
           columns={columns}
           dataSource={services}
@@ -151,7 +159,7 @@ export function ServicesPage() {
           loading={loading}
           pagination={{ pageSize: 10 }}
         />
-      </div>
+      </DataCard>
       <ServiceModal
         open={modalOpen}
         onClose={handleModalClose}

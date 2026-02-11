@@ -9,6 +9,7 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import { bankAccountsClient } from "@/lib/clients/bank-accounts";
 import type { BankAccountData } from "@/lib/clients/bank-accounts";
+import { PageHeader, DataCard } from "@/components/molecules";
 import { CreateBankAccountModal } from "@/pages/Invoices/components/CreateBankAccountModal";
 
 export function BankAccountsPage() {
@@ -134,13 +135,20 @@ export function BankAccountsPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Bank Accounts</h1>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-          New Bank Account
-        </Button>
-      </div>
-      <div className="bg-white rounded-lg shadow p-6">
+      <PageHeader
+        title="Bank Accounts"
+        subtitle="Manage your banking details for invoices"
+        actions={
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleCreate}
+          >
+            New Bank Account
+          </Button>
+        }
+      />
+      <DataCard>
         <Table
           columns={columns}
           dataSource={bankAccounts}
@@ -148,7 +156,7 @@ export function BankAccountsPage() {
           loading={loading}
           pagination={{ pageSize: 10 }}
         />
-      </div>
+      </DataCard>
       <CreateBankAccountModal
         open={modalOpen}
         onClose={handleModalClose}

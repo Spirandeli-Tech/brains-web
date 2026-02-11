@@ -3,11 +3,11 @@ import { Sidebar, AppHeader } from "@/components/organisms";
 
 export function AppLayout() {
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
-      <AppHeader />
+    <div className="min-h-screen bg-bg-page">
       <Sidebar />
-      <main className="bg-cross-pattern min-h-[calc(100vh-4rem)]">
-        <div className="ml-24 mr-3 md:ml-32 md:mr-16 p-6">
+      <AppHeader />
+      <main className="ml-[var(--sidebar-width)] pt-[var(--header-height)] min-h-screen">
+        <div className="max-w-[var(--content-max-width)] mx-auto p-6">
           <Outlet />
         </div>
       </main>

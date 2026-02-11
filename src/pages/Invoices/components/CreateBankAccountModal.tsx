@@ -1,19 +1,24 @@
-import { useEffect, useState } from 'react'
-import { Collapse, Form, Input, Modal, message } from 'antd'
-import { bankAccountsClient } from '@/lib/clients/bank-accounts'
-import type { BankAccountData } from '@/lib/clients/bank-accounts'
+import { useEffect, useState } from "react";
+import { Collapse, Form, Input, Modal, message } from "antd";
+import { bankAccountsClient } from "@/lib/clients/bank-accounts";
+import type { BankAccountData } from "@/lib/clients/bank-accounts";
 
 interface CreateBankAccountModalProps {
-  open: boolean
-  onClose: () => void
-  onSuccess: (bankAccount: BankAccountData) => void
-  bankAccount?: BankAccountData | null
+  open: boolean;
+  onClose: () => void;
+  onSuccess: (bankAccount: BankAccountData) => void;
+  bankAccount?: BankAccountData | null;
 }
 
-export function CreateBankAccountModal({ open, onClose, onSuccess, bankAccount }: CreateBankAccountModalProps) {
-  const [form] = Form.useForm()
-  const [submitting, setSubmitting] = useState(false)
-  const isEditing = !!bankAccount
+export function CreateBankAccountModal({
+  open,
+  onClose,
+  onSuccess,
+  bankAccount,
+}: CreateBankAccountModalProps) {
+  const [form] = Form.useForm();
+  const [submitting, setSubmitting] = useState(false);
+  const isEditing = !!bankAccount;
 
   useEffect(() => {
     if (open && bankAccount) {
@@ -26,76 +31,89 @@ export function CreateBankAccountModal({ open, onClose, onSuccess, bankAccount }
         bank_name: bankAccount.bank_name,
         bank_address: bankAccount.bank_address,
         intermediary_bank_info: bankAccount.intermediary_bank_info,
-      })
+      });
     }
-  }, [open, bankAccount, form])
+  }, [open, bankAccount, form]);
 
   const handleSubmit = async () => {
     try {
-      const values = await form.validateFields()
-      setSubmitting(true)
+      const values = await form.validateFields();
+      setSubmitting(true);
 
       if (isEditing) {
-        const updated = await bankAccountsClient.updateBankAccount(bankAccount.id, values)
-        message.success('Bank account updated')
-        form.resetFields()
-        onSuccess(updated)
+        const updated = await bankAccountsClient.updateBankAccount(
+          bankAccount.id,
+          values,
+        );
+        message.success("Bank account updated");
+        form.resetFields();
+        onSuccess(updated);
       } else {
-        const created = await bankAccountsClient.createBankAccount(values)
-        message.success('Bank account created')
-        form.resetFields()
-        onSuccess(created)
+        const created = await bankAccountsClient.createBankAccount(values);
+        message.success("Bank account created");
+        form.resetFields();
+        onSuccess(created);
       }
     } catch (error) {
       if (error instanceof Error) {
-        message.error(error.message)
+        message.error(error.message);
       }
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   const handleCancel = () => {
-    form.resetFields()
-    onClose()
-  }
+    form.resetFields();
+    onClose();
+  };
 
   return (
     <Modal
-      title={isEditing ? 'Edit Bank Account' : 'New Bank Account'}
+      title={isEditing ? "Edit Bank Account" : "New Bank Account"}
       open={open}
       onOk={handleSubmit}
       onCancel={handleCancel}
       confirmLoading={submitting}
-      okText={isEditing ? 'Save' : 'Create'}
+      okText={isEditing ? "Save" : "Create"}
       width={600}
       destroyOnClose
     >
-      <Form form={form} layout="vertical" className="mt-4">
+      <Form form={form} layout="vertical" className="mt-5">
+        <h4 className="text-sm font-semibold text-text-primary mb-3 mt-0">
+          Account Info
+        </h4>
         <Form.Item
           name="label"
           label="Label"
-          rules={[{ required: true, message: 'Label is required' }]}
+          rules={[{ required: true, message: "Label is required" }]}
         >
           <Input placeholder="e.g. USD Account (Citibank)" />
         </Form.Item>
 
+        <h4 className="text-sm font-semibold text-text-primary mb-3 mt-1">
+          Beneficiary
+        </h4>
         <Form.Item
           name="beneficiary_full_name"
-          label="Beneficiary Full Name"
-          rules={[{ required: true, message: 'Beneficiary name is required' }]}
+          label="Full Name"
+          rules={[
+            { required: true, message: "Beneficiary name is required" },
+          ]}
         >
           <Input placeholder="Company Inc." />
         </Form.Item>
 
-        <Form.Item name="beneficiary_full_address" label="Beneficiary Full Address">
+        <Form.Item name="beneficiary_full_address" label="Full Address">
           <Input placeholder="123 Main St, New York, NY 10001" />
         </Form.Item>
 
         <Form.Item
           name="beneficiary_account_number"
           label="Account Number / IBAN"
-          rules={[{ required: true, message: 'Account number is required' }]}
+          rules={[
+            { required: true, message: "Account number is required" },
+          ]}
         >
           <Input placeholder="IBAN or account number" />
         </Form.Item>
@@ -103,12 +121,15 @@ export function CreateBankAccountModal({ open, onClose, onSuccess, bankAccount }
         <Form.Item
           name="swift_code"
           label="SWIFT Code"
-          rules={[{ required: true, message: 'SWIFT code is required' }]}
+          rules={[{ required: true, message: "SWIFT code is required" }]}
         >
           <Input placeholder="CITIUS33" />
         </Form.Item>
 
-        <div className="grid grid-cols-2 gap-4">
+        <h4 className="text-sm font-semibold text-text-primary mb-3 mt-1">
+          Bank
+        </h4>
+        <div className="grid grid-cols-2 gap-3">
           <Form.Item name="bank_name" label="Bank Name">
             <Input placeholder="Citibank N.A." />
           </Form.Item>
@@ -122,13 +143,18 @@ export function CreateBankAccountModal({ open, onClose, onSuccess, bankAccount }
           ghost
           items={[
             {
-              key: 'intermediary',
-              label: 'Intermediary Bank (optional)',
+              key: "intermediary",
+              label: "Intermediary Bank (optional)",
               children: (
-                <Form.Item name="intermediary_bank_info" label="Intermediary Bank Details">
+                <Form.Item
+                  name="intermediary_bank_info"
+                  label="Intermediary Bank Details"
+                >
                   <Input.TextArea
                     rows={4}
-                    placeholder={"e.g.\nBank: JPMorgan Chase\nSWIFT: CHASUS33\nAccount: 123456789\nAddress: New York, NY"}
+                    placeholder={
+                      "e.g.\nBank: JPMorgan Chase\nSWIFT: CHASUS33\nAccount: 123456789\nAddress: New York, NY"
+                    }
                   />
                 </Form.Item>
               ),
@@ -137,5 +163,5 @@ export function CreateBankAccountModal({ open, onClose, onSuccess, bankAccount }
         />
       </Form>
     </Modal>
-  )
+  );
 }

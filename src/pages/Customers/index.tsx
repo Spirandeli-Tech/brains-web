@@ -9,6 +9,7 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import { customersClient } from "@/lib/clients/customers";
 import type { CustomerData } from "@/lib/clients/customers";
+import { PageHeader, DataCard } from "@/components/molecules";
 import { CreateCustomerModal } from "@/pages/Invoices/components/CreateCustomerModal";
 
 export function CustomersPage() {
@@ -139,13 +140,20 @@ export function CustomersPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-          New Customer
-        </Button>
-      </div>
-      <div className="bg-white rounded-lg shadow p-6">
+      <PageHeader
+        title="Customers"
+        subtitle="Manage your customer directory"
+        actions={
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleCreate}
+          >
+            New Customer
+          </Button>
+        }
+      />
+      <DataCard>
         <Table
           columns={columns}
           dataSource={customers}
@@ -153,7 +161,7 @@ export function CustomersPage() {
           loading={loading}
           pagination={{ pageSize: 10 }}
         />
-      </div>
+      </DataCard>
       <CreateCustomerModal
         open={modalOpen}
         onClose={handleModalClose}

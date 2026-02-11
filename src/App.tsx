@@ -12,6 +12,7 @@ import { CustomersPage } from "@/pages/Customers";
 import { BankAccountsPage } from "@/pages/BankAccounts";
 import { ServicesPage } from "@/pages/Services";
 import { AppLayout } from "@/components/templates";
+import { theme } from "@/theme/antd-theme";
 
 const router = createBrowserRouter([
   {
@@ -49,14 +50,7 @@ function AppContent() {
 
 function App() {
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: "#1677ff",
-          borderRadius: 6,
-        },
-      }}
-    >
+    <ConfigProvider theme={theme}>
       <AppContent />
     </ConfigProvider>
   );
