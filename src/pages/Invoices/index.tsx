@@ -2,15 +2,16 @@ import { useCallback, useEffect, useState } from "react";
 import { Button, Modal, Table, message } from "antd";
 import { ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { invoicesClient } from "@/lib/clients/invoices";
-import type { InvoiceListItem } from "@/lib/clients/invoices";
+import type { InvoiceData, InvoiceListItem } from "@/lib/clients/invoices";
 import { PageHeader, DataCard } from "@/components/molecules";
-import { CreateInvoiceModal } from "./components/CreateInvoiceModal";
+import { InvoiceModal } from "./components/CreateInvoiceModal";
 import { downloadInvoicePdf, getInvoiceColumns } from "./helpers";
 
 export function InvoicesPage() {
   const [invoices, setInvoices] = useState<InvoiceListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<InvoiceData | null>(null);
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
@@ -62,7 +63,31 @@ export function InvoicesPage() {
     }
   };
 
-  const columns = getInvoiceColumns(handleDelete, handleDownload);
+  const handleEdit = async (invoice: InvoiceListItem) => {
+    try {
+      const full = await invoicesClient.getInvoice(invoice.id);
+      setEditingInvoice(full);
+    } catch (error) {
+      message.error(
+        error instanceof Error ? error.message : "Failed to load invoice",
+      );
+    }
+  };
+
+  const columns = getInvoiceColumns(handleDelete, handleDownload, handleEdit);
+
+  const modalOpen = createModalOpen || editingInvoice !== null;
+
+  const handleModalClose = () => {
+    setCreateModalOpen(false);
+    setEditingInvoice(null);
+  };
+
+  const handleModalSuccess = () => {
+    setCreateModalOpen(false);
+    setEditingInvoice(null);
+    fetchInvoices();
+  };
 
   return (
     <div>
@@ -88,13 +113,11 @@ export function InvoicesPage() {
           pagination={{ pageSize: 10 }}
         />
       </DataCard>
-      <CreateInvoiceModal
-        open={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
-        onSuccess={() => {
-          setCreateModalOpen(false);
-          fetchInvoices();
-        }}
+      <InvoiceModal
+        open={modalOpen}
+        onClose={handleModalClose}
+        onSuccess={handleModalSuccess}
+        invoice={editingInvoice}
       />
     </div>
   );

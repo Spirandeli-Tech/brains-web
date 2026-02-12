@@ -1,6 +1,6 @@
 import { pdf } from "@react-pdf/renderer";
 import { Button, Space } from "antd";
-import { DeleteOutlined, DownloadOutlined } from "@ant-design/icons";
+import { DeleteOutlined, DownloadOutlined, EditOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import type { InvoiceData, InvoiceListItem } from "@/lib/clients/invoices";
 import { StatusPill } from "@/components/atoms";
@@ -34,6 +34,7 @@ export async function downloadInvoicePdf(
 export function getInvoiceColumns(
   onDelete: (invoice: InvoiceListItem) => void,
   onDownload: (invoice: InvoiceListItem) => void,
+  onEdit: (invoice: InvoiceListItem) => void,
 ): ColumnsType<InvoiceListItem> {
   return [
     {
@@ -70,6 +71,17 @@ export function getInvoiceColumns(
       ),
     },
     {
+      title: "Recurrence",
+      key: "recurrence",
+      render: (_, record) =>
+        record.is_recurrent && record.recurrence_frequency ? (
+          <StatusPill variant="info">
+            {record.recurrence_frequency.charAt(0).toUpperCase() +
+              record.recurrence_frequency.slice(1)}
+          </StatusPill>
+        ) : null,
+    },
+    {
       title: "Total",
       key: "total_amount",
       align: "right",
@@ -81,6 +93,11 @@ export function getInvoiceColumns(
       key: "actions",
       render: (_, record) => (
         <Space>
+          <Button
+            type="text"
+            icon={<EditOutlined />}
+            onClick={() => onEdit(record)}
+          />
           <Button
             type="text"
             icon={<DownloadOutlined />}

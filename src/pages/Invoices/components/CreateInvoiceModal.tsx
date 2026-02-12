@@ -7,6 +7,7 @@ import {
   Input,
   Modal,
   Select,
+  Switch,
   Table,
   message,
 } from "antd";
@@ -17,6 +18,7 @@ import type { CustomerData } from "@/lib/clients/customers";
 import { bankAccountsClient } from "@/lib/clients/bank-accounts";
 import type { BankAccountData } from "@/lib/clients/bank-accounts";
 import { invoicesClient } from "@/lib/clients/invoices";
+import type { InvoiceData, RecurrenceFrequency } from "@/lib/clients/invoices";
 import type { ServiceData } from "@/lib/clients/services";
 import { formatCurrency } from "../helpers";
 import { CreateCustomerModal } from "./CreateCustomerModal";
@@ -40,6 +42,27 @@ const STATUS_OPTIONS = [
   { label: "Void", value: "void" },
 ];
 
+const FREQUENCY_OPTIONS: { label: string; value: RecurrenceFrequency }[] = [
+  { label: "Daily", value: "daily" },
+  { label: "Weekly", value: "weekly" },
+  { label: "Monthly", value: "monthly" },
+];
+
+const DAY_OF_WEEK_OPTIONS = [
+  { label: "Monday", value: 0 },
+  { label: "Tuesday", value: 1 },
+  { label: "Wednesday", value: 2 },
+  { label: "Thursday", value: 3 },
+  { label: "Friday", value: 4 },
+  { label: "Saturday", value: 5 },
+  { label: "Sunday", value: 6 },
+];
+
+const DAY_OF_MONTH_OPTIONS = Array.from({ length: 31 }, (_, i) => ({
+  label: String(i + 1),
+  value: i + 1,
+}));
+
 interface ServiceRow {
   key: string;
   service_title: string;
@@ -47,10 +70,11 @@ interface ServiceRow {
   amount: number;
 }
 
-interface CreateInvoiceModalProps {
+interface InvoiceModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  invoice?: InvoiceData | null;
 }
 
 function FormSection({
@@ -70,11 +94,13 @@ function FormSection({
   );
 }
 
-export function CreateInvoiceModal({
+export function InvoiceModal({
   open,
   onClose,
   onSuccess,
-}: CreateInvoiceModalProps) {
+  invoice = null,
+}: InvoiceModalProps) {
+  const isEditing = !!invoice;
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
 
@@ -127,6 +153,32 @@ export function CreateInvoiceModal({
       fetchBankAccounts();
     }
   }, [open]);
+
+  // Pre-populate form and services when editing
+  useEffect(() => {
+    if (open && invoice) {
+      form.setFieldsValue({
+        customer_id: invoice.customer.id,
+        issue_date: dayjs(invoice.issue_date),
+        due_date: dayjs(invoice.due_date),
+        currency: invoice.currency,
+        status: invoice.status,
+        bank_account_id: invoice.bank_account?.id,
+        notes: invoice.notes,
+        is_recurrent: invoice.is_recurrent,
+        recurrence_frequency: invoice.recurrence_frequency,
+        recurrence_day: invoice.recurrence_day,
+      });
+      setServices(
+        invoice.services.map((s) => ({
+          key: s.id,
+          service_title: s.service_title,
+          service_description: s.service_description ?? undefined,
+          amount: Number(s.amount),
+        })),
+      );
+    }
+  }, [open, invoice]);
 
   // Customer handlers
   const handleCustomerSelect = (value: string) => {
@@ -186,6 +238,8 @@ export function CreateInvoiceModal({
 
   const totalAmount = services.reduce((sum, s) => sum + s.amount, 0);
   const selectedCurrency = Form.useWatch("currency", form) || "USD";
+  const isRecurrent = Form.useWatch("is_recurrent", form) ?? false;
+  const recurrenceFrequency = Form.useWatch("recurrence_frequency", form) as RecurrenceFrequency | undefined;
 
   // Submit
   const handleSubmit = async () => {
@@ -199,7 +253,7 @@ export function CreateInvoiceModal({
 
       setSubmitting(true);
 
-      await invoicesClient.createInvoice({
+      const payload = {
         customer_id: values.customer_id,
         issue_date: values.issue_date.format("YYYY-MM-DD"),
         due_date: values.due_date.format("YYYY-MM-DD"),
@@ -213,9 +267,19 @@ export function CreateInvoiceModal({
           sort_order: idx,
         })),
         notes: values.notes || undefined,
-      });
+        is_recurrent: values.is_recurrent || false,
+        recurrence_frequency: values.is_recurrent ? values.recurrence_frequency : undefined,
+        recurrence_day: values.is_recurrent ? values.recurrence_day : undefined,
+      };
 
-      message.success("Invoice created");
+      if (isEditing) {
+        await invoicesClient.updateInvoice(invoice!.id, payload);
+        message.success("Invoice updated");
+      } else {
+        await invoicesClient.createInvoice(payload);
+        message.success("Invoice created");
+      }
+
       form.resetFields();
       setServices([]);
       onSuccess();
@@ -283,7 +347,7 @@ export function CreateInvoiceModal({
       <Modal
         title={
           <span className="text-[22px] font-semibold text-text-primary leading-tight">
-            New Invoice
+            {isEditing ? "Edit Invoice" : "New Invoice"}
           </span>
         }
         open={open}
@@ -296,7 +360,7 @@ export function CreateInvoiceModal({
               onClick={handleSubmit}
               loading={submitting}
             >
-              Create
+              {isEditing ? "Save" : "Create"}
             </Button>
           </div>
         }
@@ -401,6 +465,81 @@ export function CreateInvoiceModal({
             </div>
           </FormSection>
 
+          {/* Recurrence Section */}
+          <FormSection title="Recurrence">
+            <div className="flex items-center gap-3 mb-3">
+              <Form.Item
+                name="is_recurrent"
+                valuePropName="checked"
+                className="mb-0"
+              >
+                <Switch />
+              </Form.Item>
+              <span className="text-sm text-text-secondary">
+                Enable recurring invoice
+              </span>
+            </div>
+
+            {isRecurrent && (
+              <div className="grid grid-cols-2 gap-4">
+                <Form.Item
+                  name="recurrence_frequency"
+                  label="Frequency"
+                  rules={[
+                    {
+                      required: isRecurrent,
+                      message: "Please select a frequency",
+                    },
+                  ]}
+                >
+                  <Select
+                    placeholder="Select frequency"
+                    options={FREQUENCY_OPTIONS}
+                    onChange={() => {
+                      form.setFieldValue("recurrence_day", undefined);
+                    }}
+                  />
+                </Form.Item>
+
+                {recurrenceFrequency === "weekly" && (
+                  <Form.Item
+                    name="recurrence_day"
+                    label="Day of Week"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please select a day",
+                      },
+                    ]}
+                  >
+                    <Select
+                      placeholder="Select day"
+                      options={DAY_OF_WEEK_OPTIONS}
+                    />
+                  </Form.Item>
+                )}
+
+                {recurrenceFrequency === "monthly" && (
+                  <Form.Item
+                    name="recurrence_day"
+                    label="Day of Month"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please select a day",
+                      },
+                    ]}
+                  >
+                    <Select
+                      placeholder="Select day"
+                      options={DAY_OF_MONTH_OPTIONS}
+                    />
+                  </Form.Item>
+                )}
+              </div>
+            )}
+          </FormSection>
+
           {/* Services Section */}
           <div className="mb-5">
             <div className="border border-border-subtle rounded-xl p-4">
@@ -496,3 +635,6 @@ export function CreateInvoiceModal({
     </>
   );
 }
+
+// Backward-compatible alias
+export const CreateInvoiceModal = InvoiceModal;
