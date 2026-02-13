@@ -1,10 +1,7 @@
-import { Dropdown, Avatar, Input } from "antd";
-import {
-  SearchOutlined,
-  LogoutOutlined,
-  UserOutlined,
-} from "@ant-design/icons";
+import { Dropdown, Avatar } from "antd";
+import { LogoutOutlined, UserOutlined } from "@ant-design/icons";
 import { useAuth } from "@/context/auth";
+import { GlobalSearch } from "@/components/organisms/GlobalSearch";
 
 export function AppHeader() {
   const { user, signOut } = useAuth();
@@ -36,12 +33,7 @@ export function AppHeader() {
 
   return (
     <header className="h-[var(--header-height)] bg-white border-b border-border-subtle fixed top-0 left-[var(--sidebar-width)] right-0 z-20 flex items-center justify-between px-6">
-      <div className="flex-1 max-w-md">
-        <Input
-          placeholder="Search..."
-          prefix={<SearchOutlined className="text-text-disabled" />}
-        />
-      </div>
+      <GlobalSearch />
 
       <Dropdown
         menu={dropdownItems}

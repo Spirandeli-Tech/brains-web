@@ -1,13 +1,22 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { DownOutlined } from "@ant-design/icons";
 import { NAV_OPTIONS } from "@/constants/navigation";
 import type { NavOption } from "@/constants/navigation";
 import { Logo } from "@/components/atoms";
+import { useAuth } from "@/context/auth";
 
 export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const isAdmin = user?.role === "ADMIN";
+
+  const visibleOptions = useMemo(
+    () => NAV_OPTIONS.filter((item) => !item.adminOnly || isAdmin),
+    [isAdmin],
+  );
   const [expandedGroup, setExpandedGroup] = useState<string | null>(() => {
     const match = NAV_OPTIONS.find((item) =>
       item.children?.some((child) => location.pathname === child.path),
@@ -42,7 +51,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex flex-col gap-1 p-3 flex-1 overflow-y-auto">
-        {NAV_OPTIONS.map((item) => {
+        {visibleOptions.map((item) => {
           const active = isActive(item);
           const isExpanded = expandedGroup === item.path;
           const hasChildren = !!item.children;

@@ -11,6 +11,7 @@ export interface NavOption {
   icon: React.ReactNode
   path: string
   children?: NavChild[]
+  adminOnly?: boolean
 }
 
 export const NAV_OPTIONS: NavOption[] = [
@@ -50,5 +51,6 @@ export const NAV_OPTIONS: NavOption[] = [
     label: 'Users',
     icon: <TeamOutlined />,
     path: '/users',
+    adminOnly: true,
   },
 ]
