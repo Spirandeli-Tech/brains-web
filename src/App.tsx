@@ -11,6 +11,9 @@ import { InvoicesPage } from "@/pages/Invoices";
 import { CustomersPage } from "@/pages/Customers";
 import { BankAccountsPage } from "@/pages/BankAccounts";
 import { ServicesPage } from "@/pages/Services";
+import { FinancePage } from "@/pages/Finance";
+import { CategoriesPage } from "@/pages/Finance/Categories";
+import { BalancesPage } from "@/pages/Finance/Balances";
 import { AppLayout } from "@/components/templates";
 import { theme } from "@/theme/antd-theme";
 
@@ -28,6 +31,14 @@ const router = createBrowserRouter([
           { path: "customers", element: <CustomersPage /> },
           { path: "bank-accounts", element: <BankAccountsPage /> },
           { path: "services", element: <ServicesPage /> },
+        ],
+      },
+      {
+        path: "finance",
+        children: [
+          { path: "", element: <FinancePage /> },
+          { path: "categories", element: <CategoriesPage /> },
+          { path: "balances", element: <BalancesPage /> },
         ],
       },
       { path: "users", element: <UsersPage /> },
