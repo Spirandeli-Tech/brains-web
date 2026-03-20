@@ -3,6 +3,7 @@ import { Button, Modal, Table, message } from "antd";
 import { ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { invoicesClient } from "@/lib/clients/invoices";
 import type { InvoiceData, InvoiceListItem } from "@/lib/clients/invoices";
+import { usersClient } from "@/lib/clients/users";
 import { PageHeader, DataCard } from "@/components/molecules";
 import { InvoiceModal } from "./components/CreateInvoiceModal";
 import { downloadInvoicePdf, getInvoiceColumns } from "./helpers";
@@ -12,6 +13,7 @@ export function InvoicesPage() {
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<InvoiceData | null>(null);
+  const [themeColor, setThemeColor] = useState<string | undefined>();
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
@@ -29,6 +31,9 @@ export function InvoicesPage() {
 
   useEffect(() => {
     fetchInvoices();
+    usersClient.getPreferences().then((prefs) => {
+      if (prefs.report_theme_color) setThemeColor(prefs.report_theme_color);
+    });
   }, []);
 
   const handleDelete = (invoice: InvoiceListItem) => {
@@ -55,7 +60,7 @@ export function InvoicesPage() {
   const handleDownload = async (invoice: InvoiceListItem) => {
     try {
       const full = await invoicesClient.getInvoice(invoice.id);
-      await downloadInvoicePdf(full);
+      await downloadInvoicePdf(full, themeColor);
     } catch (error) {
       message.error(
         error instanceof Error ? error.message : "Failed to download invoice",

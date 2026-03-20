@@ -1,168 +1,210 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import type { InvoiceData } from "@/lib/clients/invoices";
 
-const GREEN = "#1a6b3c";
-const LIGHT_GREEN = "#f0faf4";
+const DEFAULT_COLOR = "#1a6b3c";
 
-const styles = StyleSheet.create({
-  page: {
-    padding: 40,
-    fontSize: 10,
-    fontFamily: "Helvetica",
-    color: "#333",
-  },
-  // Header
-  title: {
-    fontSize: 28,
-    fontFamily: "Helvetica-Bold",
-    color: GREEN,
-  },
-  invoiceNumber: {
-    fontSize: 12,
-    color: GREEN,
-    marginTop: 2,
-  },
-  // Parties section (Seller / Customer)
-  partiesRow: {
-    flexDirection: "row",
-    marginTop: 30,
-    gap: 40,
-  },
-  partyCol: {
-    flex: 1,
-  },
-  partyLabel: {
-    fontSize: 9,
-    color: "#888",
-    marginBottom: 4,
-  },
-  partyName: {
-    fontSize: 16,
-    fontFamily: "Helvetica-Bold",
-    color: GREEN,
-    marginBottom: 6,
-  },
-  partyDetail: {
-    fontSize: 9,
-    marginBottom: 2,
-    color: "#555",
-  },
-  // Dates section
-  datesRow: {
-    flexDirection: "row",
-    marginTop: 30,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
-    gap: 40,
-  },
-  dateCol: {
-    flex: 1,
-  },
-  dateLabel: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-    color: "#555",
-    marginBottom: 4,
-  },
-  dateValue: {
-    fontSize: 10,
-  },
-  // Services table
-  tableContainer: {
-    marginTop: 30,
-    borderWidth: 1,
-    borderColor: "#c0c0c0",
-  },
-  tableHeader: {
-    flexDirection: "row",
-    backgroundColor: LIGHT_GREEN,
-    borderBottomWidth: 1,
-    borderBottomColor: "#c0c0c0",
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-  },
-  tableRow: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e8e8e8",
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    minHeight: 30,
-    alignItems: "center",
-  },
-  tableRowLast: {
-    borderBottomWidth: 0,
-  },
-  thText: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-    color: GREEN,
-  },
-  tdText: {
-    fontSize: 9,
-    color: "#444",
-  },
-  colService: { flex: 3 },
-  colQty: { width: 50, textAlign: "center" },
-  colPrice: { width: 80, textAlign: "right" },
-  colSum: { width: 80, textAlign: "right" },
-  // Totals
-  totalsContainer: {
-    marginTop: 16,
-    alignItems: "flex-end",
-  },
-  totalRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    width: 240,
-    paddingVertical: 4,
-  },
-  totalLabel: {
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
-    color: GREEN,
-    textAlign: "right",
-    flex: 1,
-  },
-  totalValue: {
-    fontSize: 10,
-    textAlign: "right",
-    width: 100,
-  },
-  grandTotalLabel: {
-    fontSize: 14,
-    fontFamily: "Helvetica-Bold",
-    color: GREEN,
-    textAlign: "right",
-    flex: 1,
-  },
-  grandTotalValue: {
-    fontSize: 18,
-    fontFamily: "Helvetica-Bold",
-    color: GREEN,
-    textAlign: "right",
-    width: 120,
-  },
-  // Notes
-  notesContainer: {
-    marginTop: 30,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
-  },
-  notesLabel: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-    color: "#555",
-    marginBottom: 4,
-  },
-  notesText: {
-    fontSize: 9,
-    color: "#555",
-  },
-});
+function hexToLightBg(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const mix = (c: number) => Math.round(c * 0.08 + 255 * 0.92);
+  return `rgb(${mix(r)},${mix(g)},${mix(b)})`;
+}
+
+function createStyles(color: string) {
+  const lightBg = hexToLightBg(color);
+
+  return StyleSheet.create({
+    page: {
+      padding: 40,
+      fontSize: 10,
+      fontFamily: "Helvetica",
+      color: "#333",
+    },
+    // Header
+    headerRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+    },
+    headerLeft: {
+      flex: 1,
+    },
+    headerRight: {
+      flex: 1,
+      alignItems: "flex-end",
+    },
+    sellerName: {
+      fontSize: 14,
+      fontFamily: "Helvetica-Bold",
+      color: "#222",
+      marginBottom: 4,
+    },
+    invoiceNumber: {
+      fontSize: 12,
+      color: "#444",
+      marginBottom: 6,
+    },
+    headerDateRow: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      marginBottom: 2,
+    },
+    headerDateLabel: {
+      fontSize: 9,
+      fontFamily: "Helvetica-Bold",
+      color: "#555",
+      marginRight: 4,
+    },
+    headerDateValue: {
+      fontSize: 9,
+      color,
+      fontFamily: "Helvetica-Bold",
+    },
+    // Parties section (Seller / Customer)
+    partiesRow: {
+      flexDirection: "row",
+      marginTop: 30,
+      gap: 40,
+    },
+    partyCol: {
+      flex: 1,
+    },
+    partyLabel: {
+      fontSize: 9,
+      color: "#888",
+      marginBottom: 4,
+    },
+    partyName: {
+      fontSize: 16,
+      fontFamily: "Helvetica-Bold",
+      color,
+      marginBottom: 6,
+    },
+    partyDetail: {
+      fontSize: 9,
+      marginBottom: 2,
+      color: "#555",
+    },
+    // Services table
+    tableContainer: {
+      marginTop: 30,
+      borderWidth: 1,
+      borderColor: "#c0c0c0",
+    },
+    tableHeader: {
+      flexDirection: "row",
+      backgroundColor: lightBg,
+      borderBottomWidth: 1,
+      borderBottomColor: "#c0c0c0",
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+    },
+    tableRow: {
+      flexDirection: "row",
+      borderBottomWidth: 1,
+      borderBottomColor: "#e8e8e8",
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+      minHeight: 30,
+      alignItems: "center",
+    },
+    tableRowLast: {
+      borderBottomWidth: 0,
+    },
+    thText: {
+      fontSize: 9,
+      fontFamily: "Helvetica-Bold",
+      color,
+    },
+    tdText: {
+      fontSize: 9,
+      color: "#444",
+    },
+    colService: { flex: 3 },
+    colQty: { width: 50, textAlign: "center" },
+    colPrice: { width: 80, textAlign: "right" },
+    colSum: { width: 80, textAlign: "right" },
+    // Totals
+    totalsContainer: {
+      marginTop: 16,
+      alignItems: "flex-end",
+    },
+    totalRow: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      alignItems: "center",
+      width: 240,
+      paddingVertical: 4,
+    },
+    totalLabel: {
+      fontSize: 10,
+      fontFamily: "Helvetica-Bold",
+      color,
+      textAlign: "right",
+      flex: 1,
+    },
+    totalValue: {
+      fontSize: 10,
+      textAlign: "right",
+      width: 100,
+    },
+    grandTotalLabel: {
+      fontSize: 14,
+      fontFamily: "Helvetica-Bold",
+      color,
+      textAlign: "right",
+      flex: 1,
+    },
+    grandTotalValue: {
+      fontSize: 18,
+      fontFamily: "Helvetica-Bold",
+      color,
+      textAlign: "right",
+      width: 120,
+    },
+    // Bank details (bottom section)
+    bankContainer: {
+      marginTop: 24,
+      backgroundColor: lightBg,
+      borderWidth: 1,
+      borderColor: "#c0c0c0",
+      padding: 16,
+    },
+    bankDetail: {
+      fontSize: 9,
+      marginBottom: 3,
+      color: "#444",
+    },
+    bankSeparator: {
+      borderBottomWidth: 1,
+      borderBottomColor: "#c0c0c0",
+      marginVertical: 8,
+    },
+    bankSubheading: {
+      fontSize: 9,
+      color,
+      marginBottom: 3,
+    },
+    // Notes
+    notesContainer: {
+      marginTop: 30,
+      paddingTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: "#e0e0e0",
+    },
+    notesLabel: {
+      fontSize: 9,
+      fontFamily: "Helvetica-Bold",
+      color: "#555",
+      marginBottom: 4,
+    },
+    notesText: {
+      fontSize: 9,
+      color: "#555",
+    },
+  });
+}
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
@@ -194,9 +236,11 @@ function buildCustomerAddress(c: InvoiceData["customer"]): string {
 
 interface InvoicePdfProps {
   invoice: InvoiceData;
+  themeColor?: string;
 }
 
-export function InvoicePdf({ invoice }: InvoicePdfProps) {
+export function InvoicePdf({ invoice, themeColor }: InvoicePdfProps) {
+  const styles = createStyles(themeColor || DEFAULT_COLOR);
   const bank = invoice.bank_account;
   const customer = invoice.customer;
   const sellerName = bank?.beneficiary_full_name ?? "";
@@ -206,37 +250,47 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
-        <Text style={styles.title}>Invoice</Text>
-        <Text style={styles.invoiceNumber}>Nr. {invoice.invoice_number}</Text>
+        {/* Header: Seller name (left) / Invoice info (right) */}
+        <View style={styles.headerRow}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.sellerName}>{sellerName}</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <Text style={styles.invoiceNumber}>
+              Invoice #{invoice.invoice_number}
+            </Text>
+            <View style={styles.headerDateRow}>
+              <Text style={styles.headerDateLabel}>Creation date:</Text>
+              <Text style={styles.headerDateValue}>
+                {formatDate(invoice.issue_date)}
+              </Text>
+            </View>
+            <View style={styles.headerDateRow}>
+              <Text style={styles.headerDateLabel}>Due date:</Text>
+              <Text style={styles.headerDateValue}>
+                {formatDate(invoice.due_date)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Divider */}
+        <View style={{ borderBottomWidth: 1, borderBottomColor: "#e0e0e0", marginTop: 16, marginBottom: 16 }} />
 
         {/* Seller / Customer */}
         <View style={styles.partiesRow}>
-          {/* Seller */}
           <View style={styles.partyCol}>
-            <Text style={styles.partyLabel}>Seller</Text>
+            <Text style={styles.partyLabel}>Bill From:</Text>
             <Text style={styles.partyName}>{sellerName}</Text>
             {bank?.beneficiary_full_address && (
               <Text style={styles.partyDetail}>
                 Address: {bank.beneficiary_full_address}
               </Text>
             )}
-            {bank && (
-              <>
-                <Text style={styles.partyDetail}>
-                  IBAN: {bank.beneficiary_account_number}
-                </Text>
-                <Text style={styles.partyDetail}>BIC: {bank.swift_code}</Text>
-                {bank.bank_name && (
-                  <Text style={styles.partyDetail}>Bank: {bank.bank_name}</Text>
-                )}
-              </>
-            )}
           </View>
 
-          {/* Customer */}
           <View style={styles.partyCol}>
-            <Text style={styles.partyLabel}>Customer</Text>
+            <Text style={styles.partyLabel}>Bill To:</Text>
             <Text style={styles.partyName}>{customerName}</Text>
             {customer.tax_id && (
               <Text style={styles.partyDetail}>
@@ -246,20 +300,6 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
             {customerAddress && (
               <Text style={styles.partyDetail}>Address: {customerAddress}</Text>
             )}
-          </View>
-        </View>
-
-        {/* Dates */}
-        <View style={styles.datesRow}>
-          <View style={styles.dateCol}>
-            <Text style={styles.dateLabel}>Invoice Date</Text>
-            <Text style={styles.dateValue}>
-              {formatDate(invoice.issue_date)}
-            </Text>
-          </View>
-          <View style={styles.dateCol}>
-            <Text style={styles.dateLabel}>Due Date</Text>
-            <Text style={styles.dateValue}>{formatDate(invoice.due_date)}</Text>
           </View>
         </View>
 
@@ -317,12 +357,6 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
 
         {/* Totals */}
         <View style={styles.totalsContainer}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>
-              {formatAmount(invoice.total_amount, invoice.currency)}
-            </Text>
-          </View>
           <View style={[styles.totalRow, { marginTop: 8 }]}>
             <Text style={styles.grandTotalLabel}>Total price</Text>
             <Text style={styles.grandTotalValue}>
@@ -330,6 +364,43 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
             </Text>
           </View>
         </View>
+
+        {/* Bank Details */}
+        {bank && (
+          <View style={styles.bankContainer}>
+            <Text style={styles.bankDetail}>
+              {"\u2022"} Beneficiary{"'"}s Full Name: {bank.beneficiary_full_name}
+            </Text>
+            {bank.beneficiary_full_address && (
+              <Text style={styles.bankDetail}>
+                {"\u2022"} Beneficiary{"'"}s Full Address: {bank.beneficiary_full_address}
+              </Text>
+            )}
+            <View style={styles.bankSeparator} />
+            <Text style={styles.bankDetail}>
+              {"\u2022"} Bank Account Number: {bank.beneficiary_account_number}
+            </Text>
+            <Text style={styles.bankDetail}>
+              {"\u2022"} SWIFT Code of Receiving Bank: {bank.swift_code}
+            </Text>
+            {bank.bank_name && (
+              <Text style={styles.bankDetail}>
+                {"\u2022"} Bank Name: {bank.bank_name}
+              </Text>
+            )}
+            {bank.intermediary_bank_info && (
+              <>
+                <View style={styles.bankSeparator} />
+                <Text style={styles.bankSubheading}>
+                  Intermediary Bank (depending on currency):
+                </Text>
+                <Text style={styles.bankDetail}>
+                  {bank.intermediary_bank_info}
+                </Text>
+              </>
+            )}
+          </View>
+        )}
 
         {/* Notes */}
         {invoice.notes && (

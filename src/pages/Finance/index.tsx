@@ -32,6 +32,7 @@ import { transactionCategoriesClient } from "@/lib/clients/transaction-categorie
 import type { TransactionCategoryData } from "@/lib/clients/transaction-categories";
 import { bankAccountsClient } from "@/lib/clients/bank-accounts";
 import type { BankAccountData } from "@/lib/clients/bank-accounts";
+import { usersClient } from "@/lib/clients/users";
 import { PageHeader, DataCard } from "@/components/molecules";
 import { TransactionModal } from "./components/TransactionModal";
 
@@ -39,7 +40,7 @@ const { RangePicker } = DatePicker;
 
 type ContextOption = "all" | TransactionContext;
 
-function formatCurrency(amount: number, currency = "BRL"): string {
+function formatCurrency(amount: number, currency = "USD"): string {
   return `${currency} ${Number(amount).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -49,6 +50,7 @@ function formatCurrency(amount: number, currency = "BRL"): string {
 export function FinancePage() {
   const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [defaultCurrency, setDefaultCurrency] = useState("USD");
   const [summary, setSummary] = useState<TransactionSummary>({
     total_income: 0,
     total_expenses: 0,
@@ -79,6 +81,9 @@ export function FinancePage() {
   useEffect(() => {
     transactionCategoriesClient.listCategories().then(setCategories);
     bankAccountsClient.listBankAccounts().then(setBankAccounts);
+    usersClient.getPreferences().then((prefs) => {
+      if (prefs.default_currency) setDefaultCurrency(prefs.default_currency);
+    });
   }, []);
 
   const buildFilters = useCallback((): TransactionFilters => {
@@ -295,13 +300,13 @@ export function FinancePage() {
         <DataCard>
           <div className="text-sm text-text-muted mb-1">Total Income</div>
           <div className="text-xl font-semibold text-green-600">
-            +{formatCurrency(summary.total_income)}
+            +{formatCurrency(summary.total_income, defaultCurrency)}
           </div>
         </DataCard>
         <DataCard>
           <div className="text-sm text-text-muted mb-1">Total Expenses</div>
           <div className="text-xl font-semibold text-red-500">
-            -{formatCurrency(summary.total_expenses)}
+            -{formatCurrency(summary.total_expenses, defaultCurrency)}
           </div>
         </DataCard>
         <DataCard>
@@ -310,7 +315,7 @@ export function FinancePage() {
             className={`text-xl font-semibold ${summary.net_balance >= 0 ? "text-green-600" : "text-red-500"}`}
           >
             {summary.net_balance >= 0 ? "+" : ""}
-            {formatCurrency(summary.net_balance)}
+            {formatCurrency(summary.net_balance, defaultCurrency)}
           </div>
         </DataCard>
       </div>
@@ -375,6 +380,7 @@ export function FinancePage() {
         onSuccess={handleModalSuccess}
         transaction={editingTransaction}
         defaultContext={contextFilter === "all" ? "business" : contextFilter}
+        defaultCurrency={defaultCurrency}
       />
     </div>
   );

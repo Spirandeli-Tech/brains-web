@@ -7,10 +7,11 @@ import {
   Input,
   InputNumber,
   Modal,
-  Radio,
+  Segmented,
   Select,
   message,
 } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 import { transactionsClient } from "@/lib/clients/transactions";
 import type {
   TransactionContext,
@@ -22,19 +23,13 @@ import type { BankAccountData } from "@/lib/clients/bank-accounts";
 import { transactionCategoriesClient } from "@/lib/clients/transaction-categories";
 import type { TransactionCategoryData } from "@/lib/clients/transaction-categories";
 
-const CURRENCY_OPTIONS = [
-  { label: "USD", value: "USD" },
-  { label: "EUR", value: "EUR" },
-  { label: "GBP", value: "GBP" },
-  { label: "BRL", value: "BRL" },
-];
-
 interface TransactionModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
   transaction?: TransactionData | null;
   defaultContext?: TransactionContext;
+  defaultCurrency?: string;
 }
 
 export function TransactionModal({
@@ -43,6 +38,7 @@ export function TransactionModal({
   onSuccess,
   transaction = null,
   defaultContext = "business",
+  defaultCurrency = "USD",
 }: TransactionModalProps) {
   const isEditing = !!transaction;
   const [form] = Form.useForm();
@@ -50,6 +46,8 @@ export function TransactionModal({
 
   const [categories, setCategories] = useState<TransactionCategoryData[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccountData[]>([]);
+  const [categorySearch, setCategorySearch] = useState("");
+  const [creatingCategory, setCreatingCategory] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -57,6 +55,44 @@ export function TransactionModal({
       bankAccountsClient.listBankAccounts().then(setBankAccounts);
     }
   }, [open]);
+
+  const handleCreateCategory = async (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+
+    const exists = categories.some(
+      (c) => c.name.toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (exists) return;
+
+    setCreatingCategory(true);
+    try {
+      const created = await transactionCategoriesClient.createCategory({
+        name: trimmed,
+      });
+      setCategories((prev) => [...prev, created]);
+      form.setFieldValue("category_id", created.id);
+      setCategorySearch("");
+    } catch (error) {
+      if (error instanceof Error) {
+        message.error(error.message);
+      }
+    } finally {
+      setCreatingCategory(false);
+    }
+  };
+
+  const filteredCategories = categorySearch
+    ? categories.filter((c) =>
+        c.name.toLowerCase().includes(categorySearch.toLowerCase()),
+      )
+    : categories;
+
+  const showCreateOption =
+    categorySearch.trim() &&
+    !categories.some(
+      (c) => c.name.toLowerCase() === categorySearch.trim().toLowerCase(),
+    );
 
   useEffect(() => {
     if (open && transaction) {
@@ -75,11 +111,11 @@ export function TransactionModal({
       form.setFieldsValue({
         type: "expense",
         context: defaultContext,
-        currency: "BRL",
+        currency: defaultCurrency,
         date: dayjs(),
       });
     }
-  }, [open, transaction, form, defaultContext]);
+  }, [open, transaction, form, defaultContext, defaultCurrency]);
 
   const handleSubmit = async () => {
     try {
@@ -127,12 +163,11 @@ export function TransactionModal({
       <Form form={form} layout="vertical" className="mt-4">
         <Form.Item
           name="type"
-          label="Type"
           rules={[{ required: true }]}
+          className="!mb-3"
         >
-          <Radio.Group
-            optionType="button"
-            buttonStyle="solid"
+          <Segmented
+            block
             options={[
               { label: "Expense", value: "expense" as TransactionType },
               { label: "Income", value: "income" as TransactionType },
@@ -140,20 +175,49 @@ export function TransactionModal({
           />
         </Form.Item>
 
-        <Form.Item
-          name="context"
-          label="Context"
-          rules={[{ required: true }]}
-        >
-          <Radio.Group
-            optionType="button"
-            buttonStyle="solid"
-            options={[
-              { label: "Business", value: "business" as TransactionContext },
-              { label: "Personal", value: "personal" as TransactionContext },
-            ]}
-          />
+        {/* Hidden fields: context and currency come from parent */}
+        <Form.Item name="context" hidden>
+          <Input />
         </Form.Item>
+        <Form.Item name="currency" hidden>
+          <Input />
+        </Form.Item>
+
+        {/* Amount Card */}
+        <div className="border border-border-subtle rounded-xl p-4 mb-4">
+          <div className="flex items-center justify-between gap-6">
+            <div className="shrink-0">
+              <p className="text-sm font-semibold text-text-primary m-0">
+                Amount
+              </p>
+              <p className="text-xs text-text-muted m-0 mt-0.5">
+                Enter the transaction value
+              </p>
+            </div>
+            <Form.Item
+              name="amount"
+              className="!mb-0"
+              rules={[
+                { required: true, message: "Amount is required" },
+                {
+                  type: "number",
+                  min: 0.01,
+                  message: "Amount must be greater than 0",
+                },
+              ]}
+            >
+              <InputNumber
+                className="!w-44 [&_input]:!text-right"
+                min={0.01}
+                step={0.01}
+                precision={2}
+                controls={false}
+                placeholder="0.00"
+                style={{ height: 48, fontSize: 18, fontWeight: 600 }}
+              />
+            </Form.Item>
+          </div>
+        </div>
 
         <Form.Item
           name="description"
@@ -162,38 +226,6 @@ export function TransactionModal({
         >
           <Input placeholder="e.g. Monthly hosting subscription" />
         </Form.Item>
-
-        <div className="flex gap-3">
-          <Form.Item
-            name="amount"
-            label="Amount"
-            rules={[
-              { required: true, message: "Amount is required" },
-              {
-                type: "number",
-                min: 0.01,
-                message: "Amount must be greater than 0",
-              },
-            ]}
-            className="flex-1"
-          >
-            <InputNumber
-              className="w-full"
-              precision={2}
-              min={0.01}
-              placeholder="0.00"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="currency"
-            label="Currency"
-            rules={[{ required: true }]}
-            className="w-28"
-          >
-            <Select options={CURRENCY_OPTIONS} />
-          </Form.Item>
-        </div>
 
         <Form.Item
           name="date"
@@ -206,8 +238,33 @@ export function TransactionModal({
         <Form.Item name="category_id" label="Category">
           <Select
             allowClear
-            placeholder="Select a category"
-            options={categories.map((c) => ({
+            showSearch
+            placeholder="Search or create a category"
+            filterOption={false}
+            searchValue={categorySearch}
+            onSearch={setCategorySearch}
+            onSelect={() => setCategorySearch("")}
+            onClear={() => setCategorySearch("")}
+            loading={creatingCategory}
+            notFoundContent={null}
+            dropdownRender={(menu) => (
+              <>
+                {menu}
+                {showCreateOption && (
+                  <div
+                    className="flex items-center gap-2 px-3 py-2 cursor-pointer text-brand-primary hover:bg-bg-hover border-t border-border-subtle"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleCreateCategory(categorySearch)}
+                  >
+                    <PlusOutlined />
+                    <span>
+                      Create "<strong>{categorySearch.trim()}</strong>"
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
+            options={filteredCategories.map((c) => ({
               label: (
                 <span className="flex items-center gap-2">
                   {c.color && (

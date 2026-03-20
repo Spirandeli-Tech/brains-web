@@ -1,10 +1,12 @@
 import { Dropdown, Avatar } from "antd";
-import { LogoutOutlined, UserOutlined } from "@ant-design/icons";
+import { LogoutOutlined, SettingOutlined, UserOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
 import { GlobalSearch } from "@/components/organisms/GlobalSearch";
 
 export function AppHeader() {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     try {
@@ -21,6 +23,15 @@ export function AppHeader() {
 
   const dropdownItems = {
     items: [
+      {
+        key: "settings",
+        label: "Settings",
+        icon: <SettingOutlined />,
+        onClick: () => navigate("/settings"),
+      },
+      {
+        type: "divider" as const,
+      },
       {
         key: "signout",
         label: "Sign out",
@@ -43,10 +54,11 @@ export function AppHeader() {
         <button className="flex items-center gap-3 cursor-pointer border-none bg-transparent p-1.5 rounded-[10px] hover:bg-bg-hover transition-colors">
           <Avatar
             size={34}
+            src={user?.photoURL}
             className="bg-brand-primary text-white font-semibold"
-            icon={!initials ? <UserOutlined /> : undefined}
+            icon={!initials && !user?.photoURL ? <UserOutlined /> : undefined}
           >
-            {initials || undefined}
+            {!user?.photoURL ? initials || undefined : undefined}
           </Avatar>
           <div className="text-left hidden sm:block">
             <p className="text-sm font-medium text-text-primary leading-tight m-0">

@@ -6,12 +6,13 @@ import type {
   BankAccountBalance,
   TransactionContext,
 } from "@/lib/clients/transactions";
+import { usersClient } from "@/lib/clients/users";
 import { PageHeader, DataCard } from "@/components/molecules";
 
 type ContextOption = "all" | TransactionContext;
 
-function formatCurrency(amount: number): string {
-  return `BRL ${Number(amount).toLocaleString("en-US", {
+function formatCurrency(amount: number, currency = "USD"): string {
+  return `${currency} ${Number(amount).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -20,7 +21,14 @@ function formatCurrency(amount: number): string {
 export function BalancesPage() {
   const [balances, setBalances] = useState<BankAccountBalance[]>([]);
   const [loading, setLoading] = useState(true);
+  const [defaultCurrency, setDefaultCurrency] = useState("USD");
   const [contextFilter, setContextFilter] = useState<ContextOption>("business");
+
+  useEffect(() => {
+    usersClient.getPreferences().then((prefs) => {
+      if (prefs.default_currency) setDefaultCurrency(prefs.default_currency);
+    });
+  }, []);
 
   const fetchBalances = useCallback(async () => {
     setLoading(true);
@@ -54,7 +62,7 @@ export function BalancesPage() {
       align: "right",
       render: (_, record) => (
         <span className="text-green-600 font-medium">
-          +{formatCurrency(record.total_income)}
+          +{formatCurrency(record.total_income, defaultCurrency)}
         </span>
       ),
     },
@@ -64,7 +72,7 @@ export function BalancesPage() {
       align: "right",
       render: (_, record) => (
         <span className="text-red-500 font-medium">
-          -{formatCurrency(record.total_expenses)}
+          -{formatCurrency(record.total_expenses, defaultCurrency)}
         </span>
       ),
     },
@@ -77,7 +85,7 @@ export function BalancesPage() {
           className={`font-semibold ${record.balance >= 0 ? "text-green-600" : "text-red-500"}`}
         >
           {record.balance >= 0 ? "+" : ""}
-          {formatCurrency(record.balance)}
+          {formatCurrency(record.balance, defaultCurrency)}
         </span>
       ),
     },

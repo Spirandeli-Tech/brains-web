@@ -20,6 +20,7 @@ export interface UserData {
   first_name: string
   last_name: string
   firebase_id: string
+  photo_url: string | null
   last_login: string | null
   created_at: string
   role: RoleData | null

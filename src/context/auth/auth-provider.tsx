@@ -32,7 +32,7 @@ const mapBackendUser = (backendUser: UserData): AuthUser => ({
   id: String(backendUser.id),
   email: backendUser.email,
   displayName: `${backendUser.first_name} ${backendUser.last_name}`,
-  photoURL: null,
+  photoURL: backendUser.photo_url ?? null,
   firstName: backendUser.first_name,
   lastName: backendUser.last_name,
   role: backendUser.role?.name ?? null,

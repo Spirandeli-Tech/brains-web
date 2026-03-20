@@ -21,8 +21,9 @@ export function formatCurrency(amount: number, currency: string): string {
 
 export async function downloadInvoicePdf(
   invoice: InvoiceData,
+  themeColor?: string,
 ): Promise<void> {
-  const blob = await pdf(<InvoicePdf invoice={invoice} />).toBlob();
+  const blob = await pdf(<InvoicePdf invoice={invoice} themeColor={themeColor} />).toBlob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

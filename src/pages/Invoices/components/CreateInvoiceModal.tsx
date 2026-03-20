@@ -19,6 +19,7 @@ import { bankAccountsClient } from "@/lib/clients/bank-accounts";
 import type { BankAccountData } from "@/lib/clients/bank-accounts";
 import { invoicesClient } from "@/lib/clients/invoices";
 import type { InvoiceData, RecurrenceFrequency } from "@/lib/clients/invoices";
+import { servicesClient } from "@/lib/clients/services";
 import type { ServiceData } from "@/lib/clients/services";
 import { formatCurrency } from "../helpers";
 import { CreateCustomerModal } from "./CreateCustomerModal";
@@ -119,6 +120,10 @@ export function InvoiceModal({
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceRow | null>(null);
 
+  // Existing services catalog
+  const [catalogServices, setCatalogServices] = useState<ServiceData[]>([]);
+  const [loadingCatalogServices, setLoadingCatalogServices] = useState(false);
+
   const fetchCustomers = async () => {
     setLoadingCustomers(true);
     try {
@@ -147,10 +152,25 @@ export function InvoiceModal({
     }
   };
 
+  const fetchCatalogServices = async () => {
+    setLoadingCatalogServices(true);
+    try {
+      const data = await servicesClient.listServices();
+      setCatalogServices(data);
+    } catch (error) {
+      message.error(
+        error instanceof Error ? error.message : "Failed to load services",
+      );
+    } finally {
+      setLoadingCatalogServices(false);
+    }
+  };
+
   useEffect(() => {
     if (open) {
       fetchCustomers();
       fetchBankAccounts();
+      fetchCatalogServices();
     }
   }, [open]);
 
@@ -225,6 +245,20 @@ export function InvoiceModal({
       setServices((prev) => [...prev, row]);
     }
     setServiceModalOpen(false);
+    fetchCatalogServices();
+  };
+
+  const handleAddExistingService = (serviceId: string) => {
+    const catalogService = catalogServices.find((s) => s.id === serviceId);
+    if (!catalogService) return;
+
+    const row: ServiceRow = {
+      key: `${catalogService.id}-${Date.now()}`,
+      service_title: catalogService.service_title,
+      service_description: catalogService.service_description ?? undefined,
+      amount: Number(catalogService.amount),
+    };
+    setServices((prev) => [...prev, row]);
   };
 
   const handleEditService = (record: ServiceRow) => {
@@ -547,18 +581,34 @@ export function InvoiceModal({
                 <h4 className="text-sm font-semibold text-text-primary m-0">
                   Services
                 </h4>
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<PlusOutlined />}
-                  className="!text-brand-primary"
-                  onClick={() => {
-                    setEditingService(null);
-                    setServiceModalOpen(true);
-                  }}
-                >
-                  Add Service
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Select
+                    placeholder="Add existing service"
+                    loading={loadingCatalogServices}
+                    showSearch
+                    optionFilterProp="label"
+                    value={undefined}
+                    onChange={handleAddExistingService}
+                    style={{ width: 200 }}
+                    size="small"
+                    options={catalogServices.map((s) => ({
+                      label: s.service_title,
+                      value: s.id,
+                    }))}
+                  />
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    className="!text-brand-primary"
+                    onClick={() => {
+                      setEditingService(null);
+                      setServiceModalOpen(true);
+                    }}
+                  >
+                    New Service
+                  </Button>
+                </div>
               </div>
 
               {services.length === 0 ? (
