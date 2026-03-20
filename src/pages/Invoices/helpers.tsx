@@ -1,6 +1,6 @@
 import { pdf } from "@react-pdf/renderer";
-import { Button, Space } from "antd";
-import { DeleteOutlined, DownloadOutlined, EditOutlined } from "@ant-design/icons";
+import { Button, Space, Tooltip } from "antd";
+import { CopyOutlined, DeleteOutlined, DownloadOutlined, EditOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import type { InvoiceData, InvoiceListItem } from "@/lib/clients/invoices";
 import { StatusPill } from "@/components/atoms";
@@ -36,6 +36,7 @@ export function getInvoiceColumns(
   onDelete: (invoice: InvoiceListItem) => void,
   onDownload: (invoice: InvoiceListItem) => void,
   onEdit: (invoice: InvoiceListItem) => void,
+  onDuplicate: (invoice: InvoiceListItem) => void,
 ): ColumnsType<InvoiceListItem> {
   return [
     {
@@ -99,6 +100,13 @@ export function getInvoiceColumns(
             icon={<EditOutlined />}
             onClick={() => onEdit(record)}
           />
+          <Tooltip title="Duplicate">
+            <Button
+              type="text"
+              icon={<CopyOutlined />}
+              onClick={() => onDuplicate(record)}
+            />
+          </Tooltip>
           <Button
             type="text"
             icon={<DownloadOutlined />}

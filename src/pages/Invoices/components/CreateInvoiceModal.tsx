@@ -76,6 +76,7 @@ interface InvoiceModalProps {
   onClose: () => void;
   onSuccess: () => void;
   invoice?: InvoiceData | null;
+  duplicateFrom?: InvoiceData | null;
 }
 
 function FormSection({
@@ -100,8 +101,10 @@ export function InvoiceModal({
   onClose,
   onSuccess,
   invoice = null,
+  duplicateFrom = null,
 }: InvoiceModalProps) {
   const isEditing = !!invoice;
+  const sourceInvoice = invoice || duplicateFrom;
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
 
@@ -174,31 +177,31 @@ export function InvoiceModal({
     }
   }, [open]);
 
-  // Pre-populate form and services when editing
+  // Pre-populate form and services when editing or duplicating
   useEffect(() => {
-    if (open && invoice) {
+    if (open && sourceInvoice) {
       form.setFieldsValue({
-        customer_id: invoice.customer.id,
-        issue_date: dayjs(invoice.issue_date),
-        due_date: dayjs(invoice.due_date),
-        currency: invoice.currency,
-        status: invoice.status,
-        bank_account_id: invoice.bank_account?.id,
-        notes: invoice.notes,
-        is_recurrent: invoice.is_recurrent,
-        recurrence_frequency: invoice.recurrence_frequency,
-        recurrence_day: invoice.recurrence_day,
+        customer_id: sourceInvoice.customer.id,
+        issue_date: duplicateFrom ? dayjs() : dayjs(sourceInvoice.issue_date),
+        due_date: duplicateFrom ? dayjs().add(30, "day") : dayjs(sourceInvoice.due_date),
+        currency: sourceInvoice.currency,
+        status: duplicateFrom ? "draft" : sourceInvoice.status,
+        bank_account_id: sourceInvoice.bank_account?.id,
+        notes: sourceInvoice.notes,
+        is_recurrent: sourceInvoice.is_recurrent,
+        recurrence_frequency: sourceInvoice.recurrence_frequency,
+        recurrence_day: sourceInvoice.recurrence_day,
       });
       setServices(
-        invoice.services.map((s) => ({
-          key: s.id,
+        sourceInvoice.services.map((s) => ({
+          key: `${s.id}-${duplicateFrom ? Date.now() : ""}`,
           service_title: s.service_title,
           service_description: s.service_description ?? undefined,
           amount: Number(s.amount),
         })),
       );
     }
-  }, [open, invoice]);
+  }, [open, sourceInvoice]);
 
   // Customer handlers
   const handleCustomerSelect = (value: string) => {

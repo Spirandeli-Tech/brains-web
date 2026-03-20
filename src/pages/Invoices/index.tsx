@@ -13,6 +13,7 @@ export function InvoicesPage() {
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<InvoiceData | null>(null);
+  const [duplicatingInvoice, setDuplicatingInvoice] = useState<InvoiceData | null>(null);
   const [themeColor, setThemeColor] = useState<string | undefined>();
 
   const fetchInvoices = useCallback(async () => {
@@ -79,18 +80,31 @@ export function InvoicesPage() {
     }
   };
 
-  const columns = getInvoiceColumns(handleDelete, handleDownload, handleEdit);
+  const handleDuplicate = async (invoice: InvoiceListItem) => {
+    try {
+      const full = await invoicesClient.getInvoice(invoice.id);
+      setDuplicatingInvoice(full);
+    } catch (error) {
+      message.error(
+        error instanceof Error ? error.message : "Failed to load invoice",
+      );
+    }
+  };
 
-  const modalOpen = createModalOpen || editingInvoice !== null;
+  const columns = getInvoiceColumns(handleDelete, handleDownload, handleEdit, handleDuplicate);
+
+  const modalOpen = createModalOpen || editingInvoice !== null || duplicatingInvoice !== null;
 
   const handleModalClose = () => {
     setCreateModalOpen(false);
     setEditingInvoice(null);
+    setDuplicatingInvoice(null);
   };
 
   const handleModalSuccess = () => {
     setCreateModalOpen(false);
     setEditingInvoice(null);
+    setDuplicatingInvoice(null);
     fetchInvoices();
   };
 
@@ -123,6 +137,7 @@ export function InvoicesPage() {
         onClose={handleModalClose}
         onSuccess={handleModalSuccess}
         invoice={editingInvoice}
+        duplicateFrom={duplicatingInvoice}
       />
     </div>
   );
