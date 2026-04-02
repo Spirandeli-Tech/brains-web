@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Modal, Table, message } from "antd";
 import { ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { invoicesClient } from "@/lib/clients/invoices";
@@ -6,7 +6,8 @@ import type { InvoiceData, InvoiceListItem } from "@/lib/clients/invoices";
 import { usersClient } from "@/lib/clients/users";
 import { PageHeader, DataCard } from "@/components/molecules";
 import { InvoiceModal } from "./components/CreateInvoiceModal";
-import { downloadInvoicePdf, getInvoiceColumns } from "./helpers";
+import { downloadInvoicePdf, getInvoiceColumns, groupInvoicesByMonth, isGroupRow } from "./helpers";
+import type { InvoiceTableRow } from "./helpers";
 
 export function InvoicesPage() {
   const [invoices, setInvoices] = useState<InvoiceListItem[]>([]);
@@ -91,6 +92,8 @@ export function InvoicesPage() {
     }
   };
 
+  const groupedInvoices = useMemo(() => groupInvoicesByMonth(invoices), [invoices]);
+
   const columns = getInvoiceColumns(handleDelete, handleDownload, handleEdit, handleDuplicate);
 
   const modalOpen = createModalOpen || editingInvoice !== null || duplicatingInvoice !== null;
@@ -124,12 +127,13 @@ export function InvoicesPage() {
         }
       />
       <DataCard>
-        <Table
+        <Table<InvoiceTableRow>
           columns={columns}
-          dataSource={invoices}
-          rowKey="id"
+          dataSource={groupedInvoices}
+          rowKey={(record) => isGroupRow(record) ? record._monthKey : record.id}
           loading={loading}
-          pagination={{ pageSize: 10 }}
+          pagination={false}
+          rowClassName={(record) => isGroupRow(record) ? "[&_td]:!bg-bg-page [&_td]:!border-b-border-subtle" : ""}
         />
       </DataCard>
       <InvoiceModal

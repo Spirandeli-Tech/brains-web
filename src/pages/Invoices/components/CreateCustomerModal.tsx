@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import { Form, Input, Modal, message } from "antd";
+import { useEffect, useMemo, useState } from "react";
+import { Form, Input, Modal, Select, message } from "antd";
 import { customersClient } from "@/lib/clients/customers";
 import type { CustomerData } from "@/lib/clients/customers";
+import { COUNTRIES } from "@/constants/countries";
 
 interface CreateCustomerModalProps {
   open: boolean;
@@ -19,6 +20,16 @@ export function CreateCustomerModal({
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const isEditing = !!customer;
+
+  const selectedCountry = Form.useWatch("country", form);
+
+  const stateOptions = useMemo(() => {
+    if (!selectedCountry) return [];
+    const country = COUNTRIES.find((c) => c.name === selectedCountry);
+    return (
+      country?.states.map((s) => ({ label: s.name, value: s.name })) ?? []
+    );
+  }, [selectedCountry]);
 
   useEffect(() => {
     if (open && customer) {
@@ -108,21 +119,36 @@ export function CreateCustomerModal({
         </Form.Item>
 
         <div className="grid grid-cols-2 gap-3">
-          <Form.Item name="city" label="City">
-            <Input />
+          <Form.Item name="country" label="Country">
+            <Select
+              showSearch
+              placeholder="Select country"
+              options={COUNTRIES.map((c) => ({
+                label: c.name,
+                value: c.name,
+              }))}
+              optionFilterProp="label"
+              onChange={() => form.setFieldValue("state", undefined)}
+            />
           </Form.Item>
 
           <Form.Item name="state" label="State">
-            <Input />
+            <Select
+              showSearch
+              placeholder="Select state"
+              options={stateOptions}
+              disabled={!selectedCountry}
+              optionFilterProp="label"
+            />
           </Form.Item>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Form.Item name="zip" label="ZIP">
+          <Form.Item name="city" label="City">
             <Input />
           </Form.Item>
 
-          <Form.Item name="country" label="Country">
+          <Form.Item name="zip" label="ZIP">
             <Input />
           </Form.Item>
         </div>
