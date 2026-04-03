@@ -18,8 +18,6 @@ export interface InvoiceServiceData {
   updated_at: string
 }
 
-export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly'
-
 export interface InvoiceData {
   id: string
   invoice_number: string
@@ -32,9 +30,8 @@ export interface InvoiceData {
   total_amount: number
   services: InvoiceServiceData[]
   notes: string | null
-  is_recurrent: boolean
-  recurrence_frequency: RecurrenceFrequency | null
-  recurrence_day: number | null
+  payment_date: string | null
+  contract_id: string | null
   created_at: string
   updated_at: string
 }
@@ -48,8 +45,8 @@ export interface InvoiceListItem {
   status: 'draft' | 'sent' | 'paid' | 'void'
   total_amount: number
   currency: string
-  is_recurrent: boolean
-  recurrence_frequency: RecurrenceFrequency | null
+  payment_date: string | null
+  contract_id: string | null
 }
 
 export interface InvoiceCreatePayload {
@@ -62,9 +59,7 @@ export interface InvoiceCreatePayload {
   bank_account_id?: string
   services: InvoiceServicePayload[]
   notes?: string
-  is_recurrent?: boolean
-  recurrence_frequency?: RecurrenceFrequency
-  recurrence_day?: number
+  total_amount?: number
 }
 
 export interface InvoiceUpdatePayload {
@@ -74,12 +69,11 @@ export interface InvoiceUpdatePayload {
   due_date?: string
   currency?: string
   status?: string
+  payment_date?: string
   bank_account_id?: string
   services?: InvoiceServicePayload[]
   notes?: string
-  is_recurrent?: boolean
-  recurrence_frequency?: RecurrenceFrequency
-  recurrence_day?: number
+  total_amount?: number
 }
 
 export interface InvoiceFilters {

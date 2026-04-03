@@ -11,6 +11,7 @@ import { InvoicesPage } from "@/pages/Invoices";
 import { CustomersPage } from "@/pages/Customers";
 import { BankAccountsPage } from "@/pages/BankAccounts";
 import { ServicesPage } from "@/pages/Services";
+import { ContractsPage } from "@/pages/Contracts";
 import { FinancePage } from "@/pages/Finance";
 import { CategoriesPage } from "@/pages/Finance/Categories";
 import { BalancesPage } from "@/pages/Finance/Balances";
@@ -32,6 +33,7 @@ const router = createBrowserRouter([
           { path: "customers", element: <CustomersPage /> },
           { path: "bank-accounts", element: <BankAccountsPage /> },
           { path: "services", element: <ServicesPage /> },
+          { path: "contracts", element: <ContractsPage /> },
         ],
       },
       {

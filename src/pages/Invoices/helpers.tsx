@@ -1,6 +1,11 @@
 import { pdf } from "@react-pdf/renderer";
 import { Button, Space, Tooltip } from "antd";
-import { CopyOutlined, DeleteOutlined, DownloadOutlined, EditOutlined } from "@ant-design/icons";
+import {
+  CopyOutlined,
+  DeleteOutlined,
+  DownloadOutlined,
+  EditOutlined,
+} from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import type { InvoiceData, InvoiceListItem } from "@/lib/clients/invoices";
 import { StatusPill } from "@/components/atoms";
@@ -40,7 +45,9 @@ function getMonthLabel(dateStr: string): string {
   return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
-export function groupInvoicesByMonth(invoices: InvoiceListItem[]): InvoiceTableRow[] {
+export function groupInvoicesByMonth(
+  invoices: InvoiceListItem[],
+): InvoiceTableRow[] {
   const groups = new Map<string, InvoiceListItem[]>();
 
   for (const inv of invoices) {
@@ -54,7 +61,7 @@ export function groupInvoicesByMonth(invoices: InvoiceListItem[]): InvoiceTableR
 
   for (const key of sortedKeys) {
     const items = groups.get(key)!;
-    const total = items.reduce((sum, inv) => sum + inv.total_amount, 0);
+    const total = items.reduce((sum, inv) => sum + Number(inv.total_amount), 0);
     const currency = items[0].currency;
 
     rows.push({
@@ -80,7 +87,9 @@ export async function downloadInvoicePdf(
   invoice: InvoiceData,
   themeColor?: string,
 ): Promise<void> {
-  const blob = await pdf(<InvoicePdf invoice={invoice} themeColor={themeColor} />).toBlob();
+  const blob = await pdf(
+    <InvoicePdf invoice={invoice} themeColor={themeColor} />,
+  ).toBlob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -89,7 +98,7 @@ export async function downloadInvoicePdf(
   URL.revokeObjectURL(url);
 }
 
-const TOTAL_COLUMNS = 8;
+const TOTAL_COLUMNS = 6;
 
 function groupCellProps(record: InvoiceTableRow, isFirst: boolean) {
   if (!isGroupRow(record)) return {};
@@ -101,10 +110,11 @@ export function getInvoiceColumns(
   onDownload: (invoice: InvoiceListItem) => void,
   onEdit: (invoice: InvoiceListItem) => void,
   onDuplicate: (invoice: InvoiceListItem) => void,
+  onStatusClick: (invoice: InvoiceListItem) => void,
 ): ColumnsType<InvoiceTableRow> {
   return [
     {
-      title: "Invoice #",
+      title: "Invoice",
       dataIndex: "invoice_number",
       key: "invoice_number",
       onCell: (record) => groupCellProps(record, true),
@@ -113,7 +123,9 @@ export function getInvoiceColumns(
           return (
             <span style={{ fontWeight: 600, fontSize: 14 }}>
               {record._label}
-              <span style={{ fontWeight: 400, color: "#8c8c8c", marginLeft: 12 }}>
+              <span
+                style={{ fontWeight: 400, color: "#8c8c8c", marginLeft: 12 }}
+              >
                 {record._count} invoice{record._count !== 1 ? "s" : ""}
                 {" \u00B7 "}
                 {formatCurrency(record._total, record._currency)}
@@ -121,16 +133,12 @@ export function getInvoiceColumns(
             </span>
           );
         }
-        return value;
-      },
-    },
-    {
-      title: "Customer",
-      key: "customer",
-      onCell: (record) => groupCellProps(record, false),
-      render: (_, record) => {
-        if (isGroupRow(record)) return null;
-        return record.customer.display_name || record.customer.legal_name;
+        return (
+          <div>
+            <div className="text-sm font-medium text-text-primary">{value}</div>
+            <div className="text-xs text-text-muted">{record.customer.display_name || record.customer.legal_name}</div>
+          </div>
+        );
       },
     },
     {
@@ -144,13 +152,13 @@ export function getInvoiceColumns(
       },
     },
     {
-      title: "Due Date",
-      dataIndex: "due_date",
-      key: "due_date",
+      title: "Payment Date",
+      dataIndex: "payment_date",
+      key: "payment_date",
       onCell: (record) => groupCellProps(record, false),
-      render: (date: string, record) => {
+      render: (date: string | null, record) => {
         if (isGroupRow(record)) return null;
-        return new Date(date).toLocaleDateString();
+        return date ? new Date(date).toLocaleDateString() : "\u2014";
       },
     },
     {
@@ -161,24 +169,15 @@ export function getInvoiceColumns(
       render: (status: string, record) => {
         if (isGroupRow(record)) return null;
         return (
-          <StatusPill variant={STATUS_VARIANT[status] ?? "default"}>
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-          </StatusPill>
+          <button
+            className="bg-transparent border-none p-0 cursor-pointer"
+            onClick={() => onStatusClick(record as InvoiceListItem)}
+          >
+            <StatusPill variant={STATUS_VARIANT[status] ?? "default"}>
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </StatusPill>
+          </button>
         );
-      },
-    },
-    {
-      title: "Recurrence",
-      key: "recurrence",
-      onCell: (record) => groupCellProps(record, false),
-      render: (_, record) => {
-        if (isGroupRow(record)) return null;
-        return record.is_recurrent && record.recurrence_frequency ? (
-          <StatusPill variant="info">
-            {record.recurrence_frequency.charAt(0).toUpperCase() +
-              record.recurrence_frequency.slice(1)}
-          </StatusPill>
-        ) : null;
       },
     },
     {

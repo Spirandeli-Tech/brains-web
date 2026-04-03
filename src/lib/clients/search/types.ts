@@ -5,6 +5,7 @@ export interface SearchResultItem {
 }
 
 export enum SearchResultType {
+  CONTRACTS = 'contracts',
   INVOICES = 'invoices',
   CUSTOMERS = 'customers',
   BANKS = 'banks',

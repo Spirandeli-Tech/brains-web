@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Input, Spin } from "antd";
 import {
+  AuditOutlined,
   SearchOutlined,
   FileTextOutlined,
   UserOutlined,
@@ -18,6 +19,11 @@ const CATEGORY_CONFIG: Record<
   SearchResultType,
   { label: string; icon: React.ReactNode; path: string }
 > = {
+  [SearchResultType.CONTRACTS]: {
+    label: "Contracts",
+    icon: <AuditOutlined />,
+    path: "/invoices/contracts",
+  },
   [SearchResultType.INVOICES]: {
     label: "Invoices",
     icon: <FileTextOutlined />,

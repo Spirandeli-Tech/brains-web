@@ -1,4 +1,4 @@
-import { BankOutlined, DashboardOutlined, DollarOutlined, FileTextOutlined, TagsOutlined, ToolOutlined, TeamOutlined, UserOutlined, WalletOutlined } from '@ant-design/icons'
+import { AuditOutlined, BankOutlined, DashboardOutlined, DollarOutlined, FileTextOutlined, TagsOutlined, ToolOutlined, TeamOutlined, UserOutlined, WalletOutlined } from '@ant-design/icons'
 
 export interface NavChild {
   label: string
@@ -21,10 +21,15 @@ export const NAV_OPTIONS: NavOption[] = [
     path: '/dashboard',
   },
   {
-    label: 'Invoices',
-    icon: <FileTextOutlined />,
-    path: '/invoices',
+    label: 'Contracts',
+    icon: <AuditOutlined />,
+    path: '/invoices/contracts',
     children: [
+      {
+        label: 'Contracts',
+        icon: <AuditOutlined />,
+        path: '/invoices/contracts',
+      },
       {
         label: 'Invoices',
         icon: <FileTextOutlined />,

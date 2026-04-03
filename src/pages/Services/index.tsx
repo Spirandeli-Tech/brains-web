@@ -12,13 +12,6 @@ import type { ServiceData } from "@/lib/clients/services";
 import { PageHeader, DataCard } from "@/components/molecules";
 import { ServiceModal } from "@/pages/Invoices/components/ServiceModal";
 
-function formatAmount(amount: number): string {
-  return Number(amount).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
 export function ServicesPage() {
   const [services, setServices] = useState<ServiceData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,13 +93,6 @@ export function ServicesPage() {
       dataIndex: "service_description",
       key: "service_description",
       render: (text: string | null) => text || "—",
-    },
-    {
-      title: "Amount",
-      dataIndex: "amount",
-      key: "amount",
-      align: "right",
-      render: (amount: number) => formatAmount(amount),
     },
     {
       title: "Created At",

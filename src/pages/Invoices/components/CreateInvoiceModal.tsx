@@ -5,9 +5,9 @@ import {
   DatePicker,
   Form,
   Input,
+  InputNumber,
   Modal,
   Select,
-  Switch,
   Table,
   message,
 } from "antd";
@@ -18,7 +18,7 @@ import type { CustomerData } from "@/lib/clients/customers";
 import { bankAccountsClient } from "@/lib/clients/bank-accounts";
 import type { BankAccountData } from "@/lib/clients/bank-accounts";
 import { invoicesClient } from "@/lib/clients/invoices";
-import type { InvoiceData, RecurrenceFrequency } from "@/lib/clients/invoices";
+import type { InvoiceData } from "@/lib/clients/invoices";
 import { servicesClient } from "@/lib/clients/services";
 import type { ServiceData } from "@/lib/clients/services";
 import { formatCurrency } from "../helpers";
@@ -42,27 +42,6 @@ const STATUS_OPTIONS = [
   { label: "Paid", value: "paid" },
   { label: "Void", value: "void" },
 ];
-
-const FREQUENCY_OPTIONS: { label: string; value: RecurrenceFrequency }[] = [
-  { label: "Daily", value: "daily" },
-  { label: "Weekly", value: "weekly" },
-  { label: "Monthly", value: "monthly" },
-];
-
-const DAY_OF_WEEK_OPTIONS = [
-  { label: "Monday", value: 0 },
-  { label: "Tuesday", value: 1 },
-  { label: "Wednesday", value: 2 },
-  { label: "Thursday", value: 3 },
-  { label: "Friday", value: 4 },
-  { label: "Saturday", value: 5 },
-  { label: "Sunday", value: 6 },
-];
-
-const DAY_OF_MONTH_OPTIONS = Array.from({ length: 31 }, (_, i) => ({
-  label: String(i + 1),
-  value: i + 1,
-}));
 
 interface ServiceRow {
   key: string;
@@ -188,10 +167,8 @@ export function InvoiceModal({
         status: duplicateFrom ? "draft" : sourceInvoice.status,
         bank_account_id: sourceInvoice.bank_account?.id,
         notes: sourceInvoice.notes,
-        is_recurrent: sourceInvoice.is_recurrent,
-        recurrence_frequency: sourceInvoice.recurrence_frequency,
-        recurrence_day: sourceInvoice.recurrence_day,
       });
+      setTotalAmount(Number(sourceInvoice.total_amount));
       setServices(
         sourceInvoice.services.map((s) => ({
           key: `${s.id}-${duplicateFrom ? Date.now() : ""}`,
@@ -237,7 +214,7 @@ export function InvoiceModal({
       key: service.id,
       service_title: service.service_title,
       service_description: service.service_description ?? undefined,
-      amount: Number(service.amount),
+      amount: editingService ? editingService.amount : 0,
     };
     if (editingService) {
       setServices((prev) =>
@@ -259,7 +236,7 @@ export function InvoiceModal({
       key: `${catalogService.id}-${Date.now()}`,
       service_title: catalogService.service_title,
       service_description: catalogService.service_description ?? undefined,
-      amount: Number(catalogService.amount),
+      amount: 0,
     };
     setServices((prev) => [...prev, row]);
   };
@@ -273,10 +250,8 @@ export function InvoiceModal({
     setServices((prev) => prev.filter((s) => s.key !== key));
   };
 
-  const totalAmount = services.reduce((sum, s) => sum + s.amount, 0);
+  const [totalAmount, setTotalAmount] = useState<number>(0);
   const selectedCurrency = Form.useWatch("currency", form) || "USD";
-  const isRecurrent = Form.useWatch("is_recurrent", form) ?? false;
-  const recurrenceFrequency = Form.useWatch("recurrence_frequency", form) as RecurrenceFrequency | undefined;
 
   // Submit
   const handleSubmit = async () => {
@@ -300,13 +275,11 @@ export function InvoiceModal({
         services: services.map((s, idx) => ({
           service_title: s.service_title,
           service_description: s.service_description,
-          amount: s.amount,
+          amount: s.amount || undefined,
           sort_order: idx,
         })),
         notes: values.notes || undefined,
-        is_recurrent: values.is_recurrent || false,
-        recurrence_frequency: values.is_recurrent ? values.recurrence_frequency : undefined,
-        recurrence_day: values.is_recurrent ? values.recurrence_day : undefined,
+        total_amount: totalAmount,
       };
 
       if (isEditing) {
@@ -319,6 +292,7 @@ export function InvoiceModal({
 
       form.resetFields();
       setServices([]);
+      setTotalAmount(0);
       onSuccess();
     } catch (error) {
       if (error instanceof Error) {
@@ -332,6 +306,7 @@ export function InvoiceModal({
   const handleCancel = () => {
     form.resetFields();
     setServices([]);
+    setTotalAmount(0);
     setEditingService(null);
     onClose();
   };
@@ -347,13 +322,6 @@ export function InvoiceModal({
       dataIndex: "service_description",
       key: "service_description",
       render: (text: string | undefined) => text || "—",
-    },
-    {
-      title: "Amount",
-      dataIndex: "amount",
-      key: "amount",
-      align: "right",
-      render: (amount: number) => formatCurrency(amount, selectedCurrency),
     },
     {
       title: "Actions",
@@ -502,81 +470,6 @@ export function InvoiceModal({
             </div>
           </FormSection>
 
-          {/* Recurrence Section */}
-          <FormSection title="Recurrence">
-            <div className="flex items-center gap-3 mb-3">
-              <Form.Item
-                name="is_recurrent"
-                valuePropName="checked"
-                className="mb-0"
-              >
-                <Switch />
-              </Form.Item>
-              <span className="text-sm text-text-secondary">
-                Enable recurring invoice
-              </span>
-            </div>
-
-            {isRecurrent && (
-              <div className="grid grid-cols-2 gap-4">
-                <Form.Item
-                  name="recurrence_frequency"
-                  label="Frequency"
-                  rules={[
-                    {
-                      required: isRecurrent,
-                      message: "Please select a frequency",
-                    },
-                  ]}
-                >
-                  <Select
-                    placeholder="Select frequency"
-                    options={FREQUENCY_OPTIONS}
-                    onChange={() => {
-                      form.setFieldValue("recurrence_day", undefined);
-                    }}
-                  />
-                </Form.Item>
-
-                {recurrenceFrequency === "weekly" && (
-                  <Form.Item
-                    name="recurrence_day"
-                    label="Day of Week"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please select a day",
-                      },
-                    ]}
-                  >
-                    <Select
-                      placeholder="Select day"
-                      options={DAY_OF_WEEK_OPTIONS}
-                    />
-                  </Form.Item>
-                )}
-
-                {recurrenceFrequency === "monthly" && (
-                  <Form.Item
-                    name="recurrence_day"
-                    label="Day of Month"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please select a day",
-                      },
-                    ]}
-                  >
-                    <Select
-                      placeholder="Select day"
-                      options={DAY_OF_MONTH_OPTIONS}
-                    />
-                  </Form.Item>
-                )}
-              </div>
-            )}
-          </FormSection>
-
           {/* Services Section */}
           <div className="mb-5">
             <div className="border border-border-subtle rounded-xl p-4">
@@ -630,11 +523,19 @@ export function InvoiceModal({
                 />
               )}
 
-              <div className="flex items-center justify-end mt-3 pt-3 border-t border-border-divider gap-2">
+              <div className="flex items-center justify-end mt-3 pt-3 border-t border-border-divider gap-3">
                 <span className="text-text-muted text-sm">Total</span>
-                <span className="text-base font-semibold text-text-primary">
-                  {formatCurrency(totalAmount, selectedCurrency)}
-                </span>
+                <InputNumber
+                  value={totalAmount}
+                  onChange={(val) => setTotalAmount(val ?? 0)}
+                  min={0}
+                  step={0.01}
+                  precision={2}
+                  controls={false}
+                  className="!w-36 [&_input]:!text-right"
+                  style={{ height: 40, fontSize: 16, fontWeight: 600 }}
+                  prefix={selectedCurrency}
+                />
               </div>
             </div>
           </div>
@@ -677,7 +578,6 @@ export function InvoiceModal({
                 service_title: editingService.service_title,
                 service_description:
                   editingService.service_description ?? null,
-                amount: editingService.amount,
                 sort_order: null,
                 created_at: "",
                 updated_at: "",

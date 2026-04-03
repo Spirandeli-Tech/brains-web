@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Modal, Table, message } from "antd";
-import { ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { ExclamationCircleOutlined, FileTextOutlined, PlusOutlined } from "@ant-design/icons";
 import { invoicesClient } from "@/lib/clients/invoices";
 import type { InvoiceData, InvoiceListItem } from "@/lib/clients/invoices";
 import { usersClient } from "@/lib/clients/users";
 import { PageHeader, DataCard } from "@/components/molecules";
 import { InvoiceModal } from "./components/CreateInvoiceModal";
+import { InvoiceStatusModal } from "./components/InvoiceStatusModal";
+import { ExportTextModal } from "./components/ExportTextModal";
 import { downloadInvoicePdf, getInvoiceColumns, groupInvoicesByMonth, isGroupRow } from "./helpers";
 import type { InvoiceTableRow } from "./helpers";
 
@@ -16,6 +18,8 @@ export function InvoicesPage() {
   const [editingInvoice, setEditingInvoice] = useState<InvoiceData | null>(null);
   const [duplicatingInvoice, setDuplicatingInvoice] = useState<InvoiceData | null>(null);
   const [themeColor, setThemeColor] = useState<string | undefined>();
+  const [statusInvoice, setStatusInvoice] = useState<InvoiceListItem | null>(null);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
@@ -94,7 +98,7 @@ export function InvoicesPage() {
 
   const groupedInvoices = useMemo(() => groupInvoicesByMonth(invoices), [invoices]);
 
-  const columns = getInvoiceColumns(handleDelete, handleDownload, handleEdit, handleDuplicate);
+  const columns = getInvoiceColumns(handleDelete, handleDownload, handleEdit, handleDuplicate, setStatusInvoice);
 
   const modalOpen = createModalOpen || editingInvoice !== null || duplicatingInvoice !== null;
 
@@ -117,13 +121,21 @@ export function InvoicesPage() {
         title="Invoices"
         subtitle="Manage and track all your invoices"
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setCreateModalOpen(true)}
-          >
-            New Invoice
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              icon={<FileTextOutlined />}
+              onClick={() => setExportModalOpen(true)}
+            >
+              Export Summary
+            </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setCreateModalOpen(true)}
+            >
+              New Invoice
+            </Button>
+          </div>
         }
       />
       <DataCard>
@@ -142,6 +154,17 @@ export function InvoicesPage() {
         onSuccess={handleModalSuccess}
         invoice={editingInvoice}
         duplicateFrom={duplicatingInvoice}
+      />
+      <InvoiceStatusModal
+        open={statusInvoice !== null}
+        onClose={() => setStatusInvoice(null)}
+        onSuccess={() => { setStatusInvoice(null); fetchInvoices(); }}
+        invoice={statusInvoice}
+      />
+      <ExportTextModal
+        open={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+        invoices={invoices}
       />
     </div>
   );
