@@ -53,16 +53,42 @@ export function ConnectionTab({ connection, dateRange, onEdit, onDelete, onSyncC
     setSyncing(true);
     try {
       const result = await productivityClient.syncConnection(connection.id);
-      if (result.errors.length > 0) {
-        message.warning(`Synced with ${result.errors.length} error(s)`);
+      if (result.status === "in_progress") {
+        message.info("Sync is already running in the background.");
       } else {
-        message.success(`Synced: ${result.commits_synced} commits, ${result.prs_synced} PRs`);
+        message.info("Sync started in the background. Data will refresh shortly.");
       }
-      fetchData();
-      onSyncComplete();
+      // Poll the listing endpoint to detect completion via last_synced_at,
+      // then refresh stats/commits. Caps after ~2 min so a hung backend
+      // doesn't keep the UI spinning forever.
+      const startedAt = connection.last_synced_at ?? null;
+      let attempts = 0;
+      const maxAttempts = 24; // 24 * 5s = 2 min
+      const poll = async (): Promise<void> => {
+        attempts += 1;
+        try {
+          const list = await productivityClient.listConnections();
+          const updated = list.find((c) => c.id === connection.id);
+          const newSyncedAt = updated?.last_synced_at ?? null;
+          if (newSyncedAt && newSyncedAt !== startedAt) {
+            fetchData();
+            onSyncComplete();
+            message.success("Sync completed.");
+            setSyncing(false);
+            return;
+          }
+        } catch {
+          /* ignore polling errors and try again */
+        }
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 5000);
+        } else {
+          setSyncing(false);
+        }
+      };
+      setTimeout(poll, 5000);
     } catch (error) {
       message.error(error instanceof Error ? error.message : "Sync failed");
-    } finally {
       setSyncing(false);
     }
   };

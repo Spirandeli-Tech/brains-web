@@ -129,6 +129,7 @@ export interface AggregatedStats {
 
 export interface SyncResult {
   connection_id: string
+  status: "started" | "in_progress" | "completed"
   commits_synced: number
   prs_synced: number
   errors: string[]
