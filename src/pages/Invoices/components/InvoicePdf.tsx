@@ -121,10 +121,7 @@ function createStyles(color: string) {
       fontSize: 9,
       color: "#444",
     },
-    colService: { flex: 3 },
-    colQty: { width: 50, textAlign: "center" },
-    colPrice: { width: 80, textAlign: "right" },
-    colSum: { width: 80, textAlign: "right" },
+    colService: { flex: 1 },
     // Totals
     totalsContainer: {
       marginTop: 16,
@@ -310,15 +307,6 @@ export function InvoicePdf({ invoice, themeColor }: InvoicePdfProps) {
             <View style={styles.colService}>
               <Text style={styles.thText}>Service</Text>
             </View>
-            <View style={styles.colQty}>
-              <Text style={styles.thText}>Qty</Text>
-            </View>
-            <View style={styles.colPrice}>
-              <Text style={styles.thText}>Price</Text>
-            </View>
-            <View style={styles.colSum}>
-              <Text style={styles.thText}>Sum</Text>
-            </View>
           </View>
 
           {/* Table rows */}
@@ -337,19 +325,6 @@ export function InvoicePdf({ invoice, themeColor }: InvoicePdfProps) {
                     {svc.service_description}
                   </Text>
                 )}
-              </View>
-              <View style={styles.colQty}>
-                <Text style={styles.tdText}>1</Text>
-              </View>
-              <View style={styles.colPrice}>
-                <Text style={styles.tdText}>
-                  {formatAmount(svc.amount, invoice.currency)}
-                </Text>
-              </View>
-              <View style={styles.colSum}>
-                <Text style={styles.tdText}>
-                  {formatAmount(svc.amount, invoice.currency)}
-                </Text>
               </View>
             </View>
           ))}

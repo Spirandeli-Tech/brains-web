@@ -16,6 +16,8 @@ import { FinancePage } from "@/pages/Finance";
 import { CategoriesPage } from "@/pages/Finance/Categories";
 import { BalancesPage } from "@/pages/Finance/Balances";
 import { SettingsPage } from "@/pages/Settings";
+import { ProductivityPage } from "@/pages/Productivity";
+import { ProductivityUserPage } from "@/pages/ProductivityUser";
 import { AppLayout } from "@/components/templates";
 import { theme } from "@/theme/antd-theme";
 
@@ -42,6 +44,13 @@ const router = createBrowserRouter([
           { path: "", element: <FinancePage /> },
           { path: "categories", element: <CategoriesPage /> },
           { path: "balances", element: <BalancesPage /> },
+        ],
+      },
+      {
+        path: "productivity",
+        children: [
+          { path: "", element: <ProductivityPage /> },
+          { path: "user", element: <ProductivityUserPage /> },
         ],
       },
       { path: "users", element: <UsersPage /> },
