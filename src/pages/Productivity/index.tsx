@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button, DatePicker, Empty, Tabs, message } from "antd";
+import type { TimeRangePickerProps } from "antd";
 import { GithubOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { productivityClient } from "@/lib/clients/productivity";
@@ -28,7 +29,7 @@ export function ProductivityPage() {
   const [connections, setConnections] = useState<ConnectionListItem[]>([]);
   const [aggregatedStats, setAggregatedStats] = useState<AggregatedStats>(DEFAULT_STATS);
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
-    dayjs().subtract(7, "day"),
+    dayjs().startOf("week"),
     dayjs(),
   ]);
   const [activeConnectionId, setActiveConnectionId] = useState<string>("");
@@ -102,6 +103,19 @@ export function ProductivityPage() {
     }
   };
 
+  const rangePresets: TimeRangePickerProps["presets"] = [
+    { label: "This week", value: [dayjs().startOf("week"), dayjs()] },
+    {
+      label: "Last week",
+      value: [
+        dayjs().subtract(1, "week").startOf("week"),
+        dayjs().subtract(1, "week").endOf("week"),
+      ],
+    },
+    { label: "Last 30 days", value: [dayjs().subtract(30, "day"), dayjs()] },
+    { label: "This month", value: [dayjs().startOf("month"), dayjs()] },
+  ];
+
   const tabItems = connections.map((conn) => ({
     key: conn.id,
     label: (
@@ -131,6 +145,7 @@ export function ProductivityPage() {
             <RangePicker
               value={dateRange}
               onChange={handleDateRangeChange}
+              presets={rangePresets}
               allowClear={false}
               size="middle"
             />
