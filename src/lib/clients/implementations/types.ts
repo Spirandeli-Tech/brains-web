@@ -1,6 +1,7 @@
 export type Provider = 'github' | 'bitbucket'
 
 export type StepKind =
+  | 'enrich_ticket'
   | 'move_to_progress'
   | 'research'
   | 'implement'
@@ -49,6 +50,9 @@ export interface ImplementationRun {
   ticket_key: string
   ticket_summary: string | null
   instructions?: string | null
+  iteration_notes?: string | null
+  repo_name: string | null
+  base_branch: string | null
   status: RunStatus
   worktree_path: string | null
   branch: string | null
@@ -66,6 +70,15 @@ export interface LaunchRunPayload {
   steps: StepKind[]
   /** Optional free-text guidance passed to the agent. */
   instructions?: string
+  /** Which repo within the connection to use. Defaults to the first if omitted. */
+  repo_name?: string
+  /** Base branch for the PR. Defaults to the repo's configured base_branch. */
+  base_branch?: string
+}
+
+export interface RepoInfo {
+  name: string
+  base_branch: string
 }
 
 export interface ImplementationStats {

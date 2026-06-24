@@ -16,6 +16,13 @@ export interface StepDefinition {
  */
 export const STEP_CATALOG: StepDefinition[] = [
   {
+    kind: 'enrich_ticket',
+    label: 'Enrich ticket',
+    description: 'Analyzes the ticket and posts a grounded technical spec comment to Jira before coding starts.',
+    sensitive: false,
+    defaultEnabled: false,
+  },
+  {
     kind: 'move_to_progress',
     label: 'Move to In Progress',
     description: 'Moves the ticket to In Progress so your team sees work has started.',

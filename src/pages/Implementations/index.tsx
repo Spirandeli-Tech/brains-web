@@ -4,7 +4,6 @@ import {
   Button,
   Empty,
   Input,
-  Segmented,
   Select,
   Spin,
   message,
@@ -19,7 +18,7 @@ import { ImplementationStats } from "./components/ImplementationStats";
 import { RunCard } from "./components/RunCard";
 import { LaunchModal } from "./components/LaunchModal";
 
-type RunFilter = "active" | "all" | "done";
+type RunFilter = "active" | "all" | "awaiting_approval" | "done" | "failed";
 
 const ACTIVE_STATUSES: RunStatus[] = ["queued", "running", "awaiting_approval"];
 const POLL_INTERVAL_MS = 8000;
@@ -48,6 +47,7 @@ export function ImplementationsPage() {
   const [cancellingRunId, setCancellingRunId] = useState<string | null>(null);
   const [restartingRunId, setRestartingRunId] = useState<string | null>(null);
   const [discussingStepId, setDiscussingStepId] = useState<string | null>(null);
+  const [iteratingRunId, setIteratingRunId] = useState<string | null>(null);
 
   const pollRef = useRef<number | null>(null);
 
@@ -116,6 +116,18 @@ export function ImplementationsPage() {
     }
   };
 
+  const handleIterate = async (runId: string, stepId: string, notes: string) => {
+    setIteratingRunId(runId);
+    try {
+      await implementationsClient.iterateStep(runId, stepId, notes);
+      await fetchRuns(true);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "Failed to queue iteration");
+    } finally {
+      setIteratingRunId(null);
+    }
+  };
+
   const handleRestart = async (runId: string) => {
     setRestartingRunId(runId);
     try {
@@ -140,9 +152,16 @@ export function ImplementationsPage() {
 
   const filteredRuns = useMemo(() => {
     if (filter === "all") return runs;
-    if (filter === "done") return runs.filter((r) => !ACTIVE_STATUSES.includes(r.status));
-    return runs.filter((r) => ACTIVE_STATUSES.includes(r.status));
+    if (filter === "active") return runs.filter((r) => ACTIVE_STATUSES.includes(r.status));
+    if (filter === "awaiting_approval") return runs.filter((r) => r.status === "awaiting_approval");
+    if (filter === "done") return runs.filter((r) => r.status === "done");
+    if (filter === "failed") return runs.filter((r) => r.status === "failed");
+    return runs;
   }, [runs, filter]);
+
+  const handleStatFilter = (value: string) => {
+    setFilter((prev) => (prev === value ? "all" : (value as RunFilter)));
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -194,19 +213,10 @@ export function ImplementationsPage() {
         />
       )}
 
-      <ImplementationStats stats={stats} />
+      <ImplementationStats stats={stats} activeFilter={filter} onFilter={handleStatFilter} />
 
       <DataCard>
-        <div className="flex items-center justify-between mb-4">
-          <Segmented
-            value={filter}
-            onChange={(v) => setFilter(v as RunFilter)}
-            options={[
-              { label: "Active", value: "active" },
-              { label: "All", value: "all" },
-              { label: "Completed", value: "done" },
-            ]}
-          />
+        <div className="flex items-center justify-end mb-4">
           <Button
             icon={<ReloadOutlined />}
             size="small"
@@ -231,10 +241,12 @@ export function ImplementationsPage() {
                 onCancel={handleCancel}
                 onRestart={handleRestart}
                 onDiscuss={handleDiscuss}
+                onIterate={handleIterate}
                 approvingStepId={approvingStepId}
                 cancellingRunId={cancellingRunId}
                 restartingRunId={restartingRunId}
                 discussingStepId={discussingStepId}
+                iteratingRunId={iteratingRunId}
               />
             ))}
           </div>
@@ -242,9 +254,11 @@ export function ImplementationsPage() {
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
-              filter === "active"
+              filter === "all"
+                ? "No runs yet."
+                : filter === "active"
                 ? "No active runs. Paste a ticket URL and hit Play."
-                : "No runs yet."
+                : `No ${filter.replace("_", " ")} runs.`
             }
           >
             <Button type="primary" icon={<CaretRightFilled />} onClick={() => setModalOpen(true)}>

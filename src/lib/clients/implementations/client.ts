@@ -5,6 +5,7 @@ import type {
   ImplementationStats,
   LaunchRunPayload,
   Provider,
+  RepoInfo,
   RunStatus,
 } from './types'
 
@@ -100,6 +101,29 @@ export class ImplementationsClient {
         this.client.post<ImplementationRun>(
           `/implementations/runs/${runId}/steps/${stepId}/discuss`,
           { message },
+          true,
+        ),
+      () => {
+        const run = mockApi.getRun(runId)
+        if (!run) throw new Error('Run not found')
+        return run
+      },
+    )
+  }
+
+  async getConnectionRepos(connectionName: string): Promise<RepoInfo[]> {
+    return this.withFallback(
+      () => this.client.get<RepoInfo[]>(`/implementations/connections/${encodeURIComponent(connectionName)}/repos`),
+      () => [],
+    )
+  }
+
+  async iterateStep(runId: string, stepId: string, notes: string): Promise<ImplementationRun> {
+    return this.withFallback(
+      () =>
+        this.client.post<ImplementationRun>(
+          `/implementations/runs/${runId}/steps/${stepId}/iterate`,
+          { notes },
           true,
         ),
       () => {

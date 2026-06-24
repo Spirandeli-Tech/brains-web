@@ -12,6 +12,7 @@ import implementationsClient, {
   STEP_CATALOG,
 } from "@/lib/clients/implementations";
 import type { StepDefinition, StepKind } from "@/lib/clients/implementations";
+import type { RepoInfo } from "@/lib/clients/implementations/types";
 import type { ConnectionListItem } from "@/lib/clients/productivity";
 
 interface LaunchModalProps {
@@ -52,6 +53,9 @@ export function LaunchModal({
 }: LaunchModalProps) {
   const [ticketUrl, setTicketUrl] = useState("");
   const [connectionId, setConnectionId] = useState<string>("");
+  const [repoName, setRepoName] = useState<string>("");
+  const [repos, setRepos] = useState<RepoInfo[]>([]);
+  const [baseBranch, setBaseBranch] = useState<string>("");
   const [instructions, setInstructions] = useState("");
   const [selectedSteps, setSelectedSteps] = useState<StepKind[]>(DEFAULT_STEPS);
   const [researchMode, setResearchMode] = useState(false);
@@ -61,10 +65,42 @@ export function LaunchModal({
     if (!open) return;
     setTicketUrl(initialTicketUrl ?? "");
     setConnectionId(initialConnectionId ?? connections[0]?.id ?? "");
+    setRepoName("");
+    setRepos([]);
+    setBaseBranch("");
     setInstructions("");
     setSelectedSteps(DEFAULT_STEPS);
     setResearchMode(false);
   }, [open, initialTicketUrl, initialConnectionId, connections]);
+
+  // Stable name for the selected connection — changes only when the user picks a different org.
+  const selectedConnectionName = useMemo(
+    () => connections.find((c) => c.id === connectionId)?.display_name ?? "",
+    [connectionId, connections],
+  );
+
+  // Fetch repos when the selected org changes. Using the resolved name (not the
+  // connections array reference) prevents the effect from firing on every parent
+  // re-render and overwriting any base-branch the user already typed.
+  useEffect(() => {
+    if (!selectedConnectionName) return;
+    setRepoName("");
+    setBaseBranch("");
+    implementationsClient.getConnectionRepos(selectedConnectionName).then((list) => {
+      setRepos(list);
+      if (list.length === 1) {
+        setRepoName(list[0].name);
+        setBaseBranch(list[0].base_branch);
+      }
+    });
+  }, [selectedConnectionName]);
+
+  // Pre-fill base branch when repo selection changes.
+  const handleRepoChange = (name: string) => {
+    setRepoName(name);
+    const repo = repos.find((r) => r.name === name);
+    if (repo) setBaseBranch(repo.base_branch);
+  };
 
   const ticketKey = useMemo(() => {
     const m = ticketUrl.match(/([A-Z][A-Z0-9]+-\d+)/);
@@ -97,7 +133,7 @@ export function LaunchModal({
   const runCount = onSteps.length;
   const gateCount = onSteps.filter((d) => d.sensitive).length;
 
-  const canLaunch = !!ticketUrl.trim() && !!connectionId && selectedSteps.length > 0;
+  const canLaunch = !!ticketUrl.trim() && !!connectionId && selectedSteps.length > 0 && (repos.length === 0 || !!repoName);
 
   const handleLaunch = async () => {
     if (!canLaunch) return;
@@ -115,6 +151,8 @@ export function LaunchModal({
               d.kind === "implement" && researchMode ? ["research" as StepKind, d.kind] : [d.kind]
             ),
           instructions: instructions.trim() || undefined,
+          repo_name: repoName || undefined,
+          base_branch: baseBranch.trim() || undefined,
         },
         conn ? { connection_name: conn.display_name, provider: conn.provider } : undefined,
       );
@@ -215,6 +253,43 @@ export function LaunchModal({
                 );
               }}
             />
+          </div>
+
+          {repos.length > 0 && (
+            <div className="mb-3.5">
+              <label className="text-[13px] font-semibold text-text-primary block mb-1.5">Repository</label>
+              <Select
+                className="w-full"
+                placeholder="Select a repository"
+                value={repoName || undefined}
+                onChange={handleRepoChange}
+                options={repos.map((r) => ({
+                  label: r.name,
+                  value: r.name,
+                  description: r.base_branch,
+                }))}
+                optionRender={(opt) => (
+                  <span className="flex items-center justify-between gap-2">
+                    <span>{opt.label}</span>
+                    <span className="text-xs text-text-muted font-mono">{(opt.data as RepoInfo).base_branch}</span>
+                  </span>
+                )}
+              />
+            </div>
+          )}
+
+          <div className="mb-3.5">
+            <label className="text-[13px] font-semibold text-text-primary block mb-1.5">
+              Base branch
+            </label>
+            <Input
+              placeholder="main"
+              value={baseBranch}
+              onChange={(e) => setBaseBranch(e.target.value)}
+            />
+            <p className="text-xs text-text-muted m-0 mt-1">
+              The branch to create the feature off of and open the PR against.
+            </p>
           </div>
 
           <div>
