@@ -1,0 +1,51 @@
+export type AutomationFrequency = 'daily' | 'weekly' | 'monthly'
+export type AutomationRunStatus = 'pending' | 'running' | 'done' | 'failed'
+
+export interface AutomationRun {
+  id: string
+  scheduled_for: string
+  status: AutomationRunStatus
+  log: string | null
+  error: string | null
+  started_at: string | null
+  finished_at: string | null
+  created_at: string
+}
+
+export interface Automation {
+  id: string
+  name: string
+  skill: string
+  connection_name: string | null
+  work_dir: string | null
+  frequency: AutomationFrequency
+  day_of_week: number | null
+  day_of_month: number | null
+  time_of_day: string
+  enabled: boolean
+  created_at: string
+  recent_runs: AutomationRun[]
+}
+
+export interface CreateAutomationPayload {
+  name: string
+  skill: string
+  connection_name?: string
+  work_dir?: string
+  frequency: AutomationFrequency
+  day_of_week?: number
+  day_of_month?: number
+  time_of_day?: string
+}
+
+export interface UpdateAutomationPayload {
+  name?: string
+  skill?: string
+  connection_name?: string
+  work_dir?: string
+  frequency?: AutomationFrequency
+  day_of_week?: number
+  day_of_month?: number
+  time_of_day?: string
+  enabled?: boolean
+}

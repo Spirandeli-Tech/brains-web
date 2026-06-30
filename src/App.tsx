@@ -19,6 +19,7 @@ import { SettingsPage } from "@/pages/Settings";
 import { ProductivityPage } from "@/pages/Productivity";
 import { ProductivityUserPage } from "@/pages/ProductivityUser";
 import { ImplementationsPage } from "@/pages/Implementations";
+import { AutomationsPage } from "@/pages/Automations";
 import { AppLayout } from "@/components/templates";
 import { theme } from "@/theme/antd-theme";
 
@@ -55,6 +56,7 @@ const router = createBrowserRouter([
         ],
       },
       { path: "implementations", element: <ImplementationsPage /> },
+      { path: "automations", element: <AutomationsPage /> },
       { path: "users", element: <UsersPage /> },
       { path: "settings", element: <SettingsPage /> },
     ],

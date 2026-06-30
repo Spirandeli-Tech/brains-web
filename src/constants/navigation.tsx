@@ -1,4 +1,4 @@
-import { AuditOutlined, BankOutlined, CodeOutlined, DashboardOutlined, DollarOutlined, FileTextOutlined, TagsOutlined, ThunderboltOutlined, ToolOutlined, TeamOutlined, UserOutlined, WalletOutlined } from '@ant-design/icons'
+import { AuditOutlined, BankOutlined, ClockCircleOutlined, CodeOutlined, DashboardOutlined, DollarOutlined, FileTextOutlined, TagsOutlined, ThunderboltOutlined, ToolOutlined, TeamOutlined, UserOutlined, WalletOutlined } from '@ant-design/icons'
 
 export interface NavChild {
   label: string
@@ -95,6 +95,11 @@ export const NAV_OPTIONS: NavOption[] = [
     label: 'Implementations',
     icon: <ThunderboltOutlined />,
     path: '/implementations',
+  },
+  {
+    label: 'Automations',
+    icon: <ClockCircleOutlined />,
+    path: '/automations',
   },
   {
     label: 'Users',

@@ -67,8 +67,8 @@ export const STEP_CATALOG: StepDefinition[] = [
   {
     kind: 'qa_notes',
     label: 'QA notes',
-    description: 'Posts the "QA Ready" comment on the ticket.',
-    sensitive: false,
+    description: 'Drafts a QA comment and pauses for your review before posting to Jira.',
+    sensitive: true,
     defaultEnabled: false,
   },
   {

@@ -322,14 +322,16 @@ export function StepTimeline({
                           </Button>
                         </div>
 
-                        {/* Iterate panel — only for open_pr */}
-                        {onIterate && step.kind === "open_pr" && (
+                        {/* Iterate panel — for open_pr and qa_notes */}
+                        {onIterate && (step.kind === "open_pr" || step.kind === "qa_notes") && (
                           <div className="border border-border-divider rounded-lg p-3 bg-bg-subtle">
                             <p className="text-xs font-semibold text-text-secondary mb-1 m-0">
-                              Iterate before opening PR
+                              {step.kind === "qa_notes" ? "Revise QA comment" : "Iterate before opening PR"}
                             </p>
                             <p className="text-xs text-text-muted mb-2 m-0">
-                              Describe changes — Claude applies them and returns here for your approval.
+                              {step.kind === "qa_notes"
+                                ? "Describe what to change — Claude rewrites the comment and returns here for your approval."
+                                : "Describe changes — Claude applies them and returns here for your approval."}
                             </p>
                             <Input.TextArea
                               placeholder="e.g. Also update the unit tests, rename the variable to be clearer…"
