@@ -16,7 +16,7 @@ import {
 import { stepLabel } from "@/lib/clients/implementations";
 import type { ImplementationStep, StepStatus } from "@/lib/clients/implementations";
 import { formatDuration, stepStatusLabel } from "./format";
-import { Linkify } from "./Linkify";
+import { Linkify } from "@/components/molecules/Linkify";
 import { Markdown } from "./Markdown";
 
 const STATUS_VISUAL: Record<StepStatus, { icon: React.ReactNode; color: string }> = {
@@ -37,14 +37,6 @@ const STATUS_TAG: Record<StepStatus, string> = {
   pending: "default",
 };
 
-const BORDER_BY_STATUS: Record<StepStatus, string> = {
-  running: "border-blue-200",
-  awaiting_approval: "border-amber-200",
-  failed: "border-red-200",
-  done: "border-border-divider",
-  skipped: "border-border-divider",
-  pending: "border-border-divider",
-};
 
 /** Steps whose logs are generated as Markdown (code review, QA notes, research chat). */
 const MARKDOWN_KINDS = new Set(["code_review", "qa_notes", "research"]);
@@ -232,7 +224,10 @@ export function StepTimeline({
             )}
 
             {/* Step accordion card */}
-            <div className={`rounded-lg border overflow-hidden ${BORDER_BY_STATUS[step.status]}`}>
+            <div
+              className="rounded-lg border border-border-subtle overflow-hidden"
+              style={{ borderLeftColor: visual.color, borderLeftWidth: 3 }}
+            >
               {/* Header */}
               <div
                 className={`flex items-center gap-2.5 px-3 py-2.5 select-none ${

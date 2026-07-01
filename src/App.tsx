@@ -20,6 +20,8 @@ import { ProductivityPage } from "@/pages/Productivity";
 import { ProductivityUserPage } from "@/pages/ProductivityUser";
 import { ImplementationsPage } from "@/pages/Implementations";
 import { AutomationsPage } from "@/pages/Automations";
+import { AutomationDetailPage } from "@/pages/Automations/AutomationDetail";
+import { CodeReviewPage } from "@/pages/CodeReview";
 import { AppLayout } from "@/components/templates";
 import { theme } from "@/theme/antd-theme";
 
@@ -56,7 +58,14 @@ const router = createBrowserRouter([
         ],
       },
       { path: "implementations", element: <ImplementationsPage /> },
-      { path: "automations", element: <AutomationsPage /> },
+      { path: "code-review", element: <CodeReviewPage /> },
+      {
+        path: "automations",
+        children: [
+          { path: "", element: <AutomationsPage /> },
+          { path: ":id", element: <AutomationDetailPage /> },
+        ],
+      },
       { path: "users", element: <UsersPage /> },
       { path: "settings", element: <SettingsPage /> },
     ],

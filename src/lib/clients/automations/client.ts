@@ -1,5 +1,5 @@
 import { ApiClient } from '../api-client'
-import type { Automation, CreateAutomationPayload, UpdateAutomationPayload } from './types'
+import type { Automation, AutomationRun, CreateAutomationPayload, UpdateAutomationPayload } from './types'
 
 export class AutomationsClient {
   private client: ApiClient
@@ -12,6 +12,14 @@ export class AutomationsClient {
     return this.client.get<Automation[]>('/automations')
   }
 
+  async getAutomation(id: string): Promise<Automation> {
+    return this.client.get<Automation>(`/automations/${id}`)
+  }
+
+  async listSkills(): Promise<string[]> {
+    return this.client.get<string[]>('/automations/skills')
+  }
+
   async createAutomation(payload: CreateAutomationPayload): Promise<Automation> {
     return this.client.post<Automation>('/automations', payload, true)
   }
@@ -22,5 +30,9 @@ export class AutomationsClient {
 
   async deleteAutomation(id: string): Promise<void> {
     return this.client.delete<void>(`/automations/${id}`)
+  }
+
+  async runAutomationNow(id: string): Promise<AutomationRun> {
+    return this.client.post<AutomationRun>(`/automations/${id}/run`, {}, true)
   }
 }

@@ -1,5 +1,5 @@
 import React, { Fragment } from "react";
-import { Linkify } from "./Linkify";
+import { Linkify } from "@/components/molecules/Linkify";
 
 /** Render inline markdown: **bold**, *italic*, `code`, and URLs via Linkify. */
 function renderInline(text: string, key: string | number): React.ReactNode {

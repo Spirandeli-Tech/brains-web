@@ -4,65 +4,32 @@ import {
   Button,
   Collapse,
   Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
   Spin,
   Switch,
   Tag,
-  TimePicker,
   Tooltip,
   message,
 } from "antd";
 import {
-  ClockCircleOutlined,
+  CopyOutlined,
   DeleteOutlined,
+  EditOutlined,
+  PlayCircleOutlined,
   PlusOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
-import dayjs from "dayjs";
+import { Link } from "react-router-dom";
 import automationsClient from "@/lib/clients/automations";
-import type {
-  Automation,
-  AutomationFrequency,
-  AutomationRun,
-  AutomationRunStatus,
-  CreateAutomationPayload,
-} from "@/lib/clients/automations";
+import type { Automation, AutomationRun } from "@/lib/clients/automations";
 import { PageHeader, DataCard } from "@/components/molecules";
-
-const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const FREQUENCY_LABELS: Record<AutomationFrequency, string> = {
-  daily: "Daily",
-  weekly: "Weekly",
-  monthly: "Monthly",
-};
-
-const RUN_STATUS_COLOR: Record<AutomationRunStatus, string> = {
-  pending: "default",
-  running: "processing",
-  done: "success",
-  failed: "error",
-};
-
-function formatFrequency(automation: Automation): string {
-  const time = automation.time_of_day.slice(0, 5);
-  if (automation.frequency === "daily") return `Daily at ${time}`;
-  if (automation.frequency === "weekly" && automation.day_of_week != null) {
-    return `Every ${DAY_NAMES[automation.day_of_week]} at ${time}`;
-  }
-  if (automation.frequency === "monthly" && automation.day_of_month != null) {
-    return `Monthly on day ${automation.day_of_month} at ${time}`;
-  }
-  return FREQUENCY_LABELS[automation.frequency];
-}
+import { AUTOMATION_POLL_INTERVAL_MS, RUN_STATUS_COLOR, formatFrequency } from "./utils";
+import { AutomationFormModal } from "./AutomationFormModal";
 
 function RunRow({ run }: { run: AutomationRun }) {
   return (
     <div className="flex items-center gap-3 py-1 text-sm">
       <Tag color={RUN_STATUS_COLOR[run.status]}>{run.status}</Tag>
+      {run.is_manual && <Tag>manual</Tag>}
       <span className="text-gray-500">{run.scheduled_for}</span>
       {run.error && (
         <Tooltip title={run.error}>
@@ -77,14 +44,22 @@ function AutomationCard({
   automation,
   onToggle,
   onDelete,
+  onRun,
+  onEdit,
+  onDuplicate,
   toggling,
   deleting,
+  running,
 }: {
   automation: Automation;
   onToggle: (id: string, enabled: boolean) => void;
   onDelete: (id: string) => void;
+  onRun: (id: string) => void;
+  onEdit: (automation: Automation) => void;
+  onDuplicate: (automation: Automation) => void;
   toggling: string | null;
   deleting: string | null;
+  running: string | null;
 }) {
   const hasActiveRuns = automation.recent_runs.some(
     (r) => r.status === "pending" || r.status === "running"
@@ -113,23 +88,56 @@ function AutomationCard({
         <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-2">
             {hasActiveRuns && <Badge status="processing" />}
-            <span className="font-medium truncate">{automation.name}</span>
+            <Link
+              to={`/automations/${automation.id}`}
+              className="font-medium truncate hover:underline"
+            >
+              {automation.name}
+            </Link>
           </div>
           <code className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded w-fit">
             {automation.skill}
           </code>
           <span className="text-xs text-gray-500">{formatFrequency(automation)}</span>
+          {automation.instructions && (
+            <Tooltip title={automation.instructions}>
+              <span className="text-xs text-gray-400 truncate max-w-xs">
+                Instructions: {automation.instructions}
+              </span>
+            </Tooltip>
+          )}
           {automation.connection_name && (
             <span className="text-xs text-gray-400">Org: {automation.connection_name}</span>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <Tooltip title={automation.enabled ? "Run now" : "Enable the automation to run it"}>
+            <Button
+              icon={<PlayCircleOutlined />}
+              size="small"
+              disabled={!automation.enabled}
+              loading={running === automation.id}
+              onClick={() => onRun(automation.id)}
+            />
+          </Tooltip>
           <Switch
             checked={automation.enabled}
             loading={toggling === automation.id}
             onChange={(checked) => onToggle(automation.id, checked)}
             size="small"
           />
+          <Button
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => onEdit(automation)}
+          />
+          <Tooltip title="Duplicate">
+            <Button
+              icon={<CopyOutlined />}
+              size="small"
+              onClick={() => onDuplicate(automation)}
+            />
+          </Tooltip>
           <Button
             icon={<DeleteOutlined />}
             size="small"
@@ -147,139 +155,15 @@ function AutomationCard({
   );
 }
 
-interface CreateFormValues {
-  name: string;
-  skill: string;
-  connection_name?: string;
-  work_dir?: string;
-  frequency: AutomationFrequency;
-  day_of_week?: number;
-  day_of_month?: number;
-  time_of_day?: dayjs.Dayjs;
-}
-
-function CreateModal({
-  open,
-  onClose,
-  onCreated,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onCreated: () => void;
-}) {
-  const [form] = Form.useForm<CreateFormValues>();
-  const [creating, setCreating] = useState(false);
-  const frequency = Form.useWatch("frequency", form);
-
-  const handleSubmit = async () => {
-    const values = await form.validateFields();
-    setCreating(true);
-    try {
-      const payload: CreateAutomationPayload = {
-        name: values.name,
-        skill: values.skill,
-        frequency: values.frequency,
-        connection_name: values.connection_name || undefined,
-        work_dir: values.work_dir || undefined,
-        day_of_week: values.day_of_week,
-        day_of_month: values.day_of_month,
-        time_of_day: values.time_of_day
-          ? values.time_of_day.format("HH:mm:ss")
-          : undefined,
-      };
-      await automationsClient.createAutomation(payload);
-      message.success("Automation created");
-      form.resetFields();
-      onCreated();
-    } catch (error) {
-      message.error(
-        error instanceof Error ? error.message : "Failed to create automation"
-      );
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  return (
-    <Modal
-      title="New Automation"
-      open={open}
-      onCancel={onClose}
-      onOk={handleSubmit}
-      confirmLoading={creating}
-      okText="Create"
-      destroyOnClose
-    >
-      <Form form={form} layout="vertical" className="mt-4">
-        <Form.Item name="name" label="Name" rules={[{ required: true }]}>
-          <Input placeholder="Daily status update" />
-        </Form.Item>
-
-        <Form.Item
-          name="skill"
-          label="Skill"
-          rules={[{ required: true }]}
-          extra="The Claude Code skill to run, e.g. /daily-status"
-        >
-          <Input placeholder="/daily-status" />
-        </Form.Item>
-
-        <Form.Item name="frequency" label="Frequency" rules={[{ required: true }]}>
-          <Select
-            options={[
-              { label: "Daily", value: "daily" },
-              { label: "Weekly", value: "weekly" },
-              { label: "Monthly", value: "monthly" },
-            ]}
-          />
-        </Form.Item>
-
-        {frequency === "weekly" && (
-          <Form.Item
-            name="day_of_week"
-            label="Day of Week"
-            rules={[{ required: true }]}
-          >
-            <Select
-              options={DAY_NAMES.map((d, i) => ({ label: d, value: i }))}
-            />
-          </Form.Item>
-        )}
-
-        {frequency === "monthly" && (
-          <Form.Item
-            name="day_of_month"
-            label="Day of Month"
-            rules={[{ required: true }]}
-          >
-            <InputNumber min={1} max={31} style={{ width: "100%" }} />
-          </Form.Item>
-        )}
-
-        <Form.Item name="time_of_day" label="Time">
-          <TimePicker format="HH:mm" minuteStep={15} style={{ width: "100%" }} />
-        </Form.Item>
-
-        <Form.Item name="connection_name" label="Connection (optional)">
-          <Input placeholder="Spirandeli" />
-        </Form.Item>
-
-        <Form.Item name="work_dir" label="Work directory (optional)">
-          <Input placeholder="/Users/you/Work/MyProject" />
-        </Form.Item>
-      </Form>
-    </Modal>
-  );
-}
-
-const POLL_INTERVAL_MS = 10000;
-
 export function AutomationsPage() {
   const [automations, setAutomations] = useState<Automation[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingAutomation, setEditingAutomation] = useState<Automation | null>(null);
+  const [duplicatingFrom, setDuplicatingFrom] = useState<Automation | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [running, setRunning] = useState<string | null>(null);
 
   const pollRef = useRef<number | null>(null);
 
@@ -310,7 +194,7 @@ export function AutomationsPage() {
     if (hasActive) {
       pollRef.current = window.setInterval(
         () => fetchAutomations(true),
-        POLL_INTERVAL_MS
+        AUTOMATION_POLL_INTERVAL_MS
       );
     }
     return () => {
@@ -329,6 +213,21 @@ export function AutomationsPage() {
       );
     } finally {
       setToggling(null);
+    }
+  };
+
+  const handleRun = async (id: string) => {
+    setRunning(id);
+    try {
+      await automationsClient.runAutomationNow(id);
+      message.success("Run queued, it will start shortly");
+      await fetchAutomations(true);
+    } catch (error) {
+      message.error(
+        error instanceof Error ? error.message : "Failed to queue run"
+      );
+    } finally {
+      setRunning(null);
     }
   };
 
@@ -386,8 +285,12 @@ export function AutomationsPage() {
                 automation={automation}
                 onToggle={handleToggle}
                 onDelete={handleDelete}
+                onRun={handleRun}
+                onEdit={setEditingAutomation}
+                onDuplicate={setDuplicatingFrom}
                 toggling={toggling}
                 deleting={deleting}
+                running={running}
               />
             ))}
           </div>
@@ -407,11 +310,19 @@ export function AutomationsPage() {
         )}
       </DataCard>
 
-      <CreateModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onCreated={() => {
+      <AutomationFormModal
+        open={modalOpen || !!editingAutomation || !!duplicatingFrom}
+        automation={editingAutomation}
+        duplicateFrom={duplicatingFrom}
+        onClose={() => {
           setModalOpen(false);
+          setEditingAutomation(null);
+          setDuplicatingFrom(null);
+        }}
+        onSaved={() => {
+          setModalOpen(false);
+          setEditingAutomation(null);
+          setDuplicatingFrom(null);
           fetchAutomations(true);
         }}
       />
