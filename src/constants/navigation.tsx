@@ -97,6 +97,11 @@ export const NAV_OPTIONS: NavOption[] = [
     path: '/implementations',
   },
   {
+    label: 'Code Review',
+    icon: <AuditOutlined />,
+    path: '/code-review',
+  },
+  {
     label: 'Automations',
     icon: <ClockCircleOutlined />,
     path: '/automations',
