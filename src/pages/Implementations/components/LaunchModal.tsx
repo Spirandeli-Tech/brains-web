@@ -57,6 +57,7 @@ export function LaunchModal({
   // multi-select (a ticket can touch more than one of its ~15 repos at once).
   const [repoNames, setRepoNames] = useState<string[]>([]);
   const [repos, setRepos] = useState<RepoInfo[]>([]);
+  const [reposLoading, setReposLoading] = useState(false);
   const [baseBranch, setBaseBranch] = useState<string>("");
   const [instructions, setInstructions] = useState("");
   const [selectedSteps, setSelectedSteps] = useState<StepKind[]>(DEFAULT_STEPS);
@@ -89,18 +90,36 @@ export function LaunchModal({
   // Fetch repos when the selected org changes. Using the resolved name (not the
   // connections array reference) prevents the effect from firing on every parent
   // re-render and overwriting any base-branch the user already typed.
+  //
+  // getConnectionRepos() swallows fetch errors into `[]` (see client.ts), so an
+  // empty result here is ambiguous: for legacy single-repo orgs (a bare
+  // `repo_path` in config.json, never registered via register_all_repos) it's
+  // the normal, expected state. For a cascade org it should never legitimately
+  // happen — treat it as "load failed" and block launch until it resolves,
+  // instead of silently letting the run start with no repo (which the runner
+  // used to interpret as "use the bootstrap checkout", writing straight onto
+  // whatever branch was checked out).
+  const loadRepos = () => {
+    if (!selectedConnectionName) return;
+    setReposLoading(true);
+    implementationsClient
+      .getConnectionRepos(selectedConnectionName)
+      .then((list) => {
+        setRepos(list);
+        if (list.length === 1) {
+          setRepoNames([list[0].name]);
+          setBaseBranch(list[0].base_branch);
+        }
+      })
+      .finally(() => setReposLoading(false));
+  };
+
   useEffect(() => {
     if (!selectedConnectionName) return;
     setRepoNames([]);
     setBaseBranch("");
-    implementationsClient.getConnectionRepos(selectedConnectionName).then((list) => {
-      setRepos(list);
-      if (list.length === 1) {
-        setRepoNames([list[0].name]);
-        setBaseBranch(list[0].base_branch);
-      }
-    });
-  }, [selectedConnectionName]);
+    loadRepos();
+  }, [selectedConnectionName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Single-select: pre-fill base branch from the chosen repo's default.
   const handleRepoChange = (name: string) => {
@@ -140,7 +159,11 @@ export function LaunchModal({
   const runCount = onSteps.length;
   const gateCount = onSteps.filter((d) => d.sensitive).length;
 
-  const canLaunch = !!ticketUrl.trim() && !!connectionId && selectedSteps.length > 0 && (repos.length === 0 || repoNames.length > 0);
+  // Cascade orgs always have registered repos — an empty list here means the
+  // fetch hasn't resolved yet or failed, not "no selection needed", so launch
+  // stays blocked until at least one repo is actually selected.
+  const reposSatisfied = isCascadeOrg ? repoNames.length > 0 : repos.length === 0 || repoNames.length > 0;
+  const canLaunch = !!ticketUrl.trim() && !!connectionId && selectedSteps.length > 0 && reposSatisfied;
 
   const handleLaunch = async () => {
     if (!canLaunch) return;
@@ -303,6 +326,29 @@ export function LaunchModal({
                 <p className="text-xs text-text-muted m-0 mt-1">
                   Implement, Open PR, Code review and Address feedback run once per
                   selected repo ({repoNames.length}× repos → {repoNames.length}× those steps).
+                </p>
+              )}
+            </div>
+          )}
+
+          {isCascadeOrg && repos.length === 0 && (
+            <div className="mb-3.5">
+              <label className="text-[13px] font-semibold text-text-primary block mb-1.5">
+                Repositories
+              </label>
+              {reposLoading ? (
+                <p className="text-xs text-text-muted m-0">Loading repositories…</p>
+              ) : (
+                <p className="text-xs text-status-danger-text m-0">
+                  Couldn't load repositories for {selectedConnectionName} — the runner may not
+                  have registered them yet.{" "}
+                  <button
+                    type="button"
+                    onClick={loadRepos}
+                    className="underline font-semibold text-status-danger-text"
+                  >
+                    Retry
+                  </button>
                 </p>
               )}
             </div>
