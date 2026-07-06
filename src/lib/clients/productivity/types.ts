@@ -13,6 +13,9 @@ export interface ConnectionData {
   selected_repos: string[] | null
   is_primary: boolean
   last_synced_at: string | null
+  last_sync_attempted_at: string | null
+  last_sync_status: 'success' | 'error' | null
+  last_sync_error: string | null
   created_at: string
   updated_at: string
 }
@@ -27,6 +30,9 @@ export interface ConnectionListItem {
   selected_repos: string[] | null
   is_primary: boolean
   last_synced_at: string | null
+  last_sync_attempted_at: string | null
+  last_sync_status: 'success' | 'error' | null
+  last_sync_error: string | null
   created_at: string
 }
 

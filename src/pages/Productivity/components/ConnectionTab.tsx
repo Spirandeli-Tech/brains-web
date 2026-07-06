@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Button, Modal, message } from "antd";
+import { Alert, Button, Modal, message } from "antd";
 import { DeleteOutlined, EditOutlined, ExclamationCircleOutlined, SyncOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -58,10 +58,12 @@ export function ConnectionTab({ connection, dateRange, onEdit, onDelete, onSyncC
       } else {
         message.info("Sync started in the background. Data will refresh shortly.");
       }
-      // Poll the listing endpoint to detect completion via last_synced_at,
-      // then refresh stats/commits. Caps after ~2 min so a hung backend
-      // doesn't keep the UI spinning forever.
-      const startedAt = connection.last_synced_at ?? null;
+      // Poll the listing endpoint to detect completion via last_sync_attempted_at
+      // (updated on every attempt, success or failure — unlike last_synced_at,
+      // which only advances on a clean run and would leave this polling forever
+      // on a failed sync), then refresh stats/commits. Caps after ~2 min so a
+      // hung backend doesn't keep the UI spinning forever.
+      const startedAt = connection.last_sync_attempted_at ?? null;
       let attempts = 0;
       const maxAttempts = 24; // 24 * 5s = 2 min
       const poll = async (): Promise<void> => {
@@ -69,11 +71,15 @@ export function ConnectionTab({ connection, dateRange, onEdit, onDelete, onSyncC
         try {
           const list = await productivityClient.listConnections();
           const updated = list.find((c) => c.id === connection.id);
-          const newSyncedAt = updated?.last_synced_at ?? null;
-          if (newSyncedAt && newSyncedAt !== startedAt) {
+          const newAttemptedAt = updated?.last_sync_attempted_at ?? null;
+          if (newAttemptedAt && newAttemptedAt !== startedAt) {
             fetchData();
             onSyncComplete();
-            message.success("Sync completed.");
+            if (updated?.last_sync_status === "error") {
+              message.error(updated.last_sync_error || "Sync failed.");
+            } else {
+              message.success("Sync completed.");
+            }
             setSyncing(false);
             return;
           }
@@ -124,6 +130,15 @@ export function ConnectionTab({ connection, dateRange, onEdit, onDelete, onSyncC
             : "Never synced"}
         </span>
       </div>
+
+      {connection.last_sync_status === "error" && connection.last_sync_error && (
+        <Alert
+          type="error"
+          showIcon
+          message="Last sync failed"
+          description={connection.last_sync_error}
+        />
+      )}
 
       <ConnectionStatsCards stats={stats} />
       <CommitsTable commits={commits} loading={loading} />
