@@ -36,8 +36,19 @@ export interface ImplementationStep {
   approved?: boolean
   status: StepStatus
   log: string | null
+  /** Which repo this step targets, for multi-repo runs. Null = ticket-level step. */
+  repo_name: string | null
   started_at: string | null
   ended_at: string | null
+}
+
+/** One PR opened as part of a cascade run (Ecointeractive). */
+export interface PrTarget {
+  repo_name: string
+  stage: string
+  branch: string
+  base_branch: string
+  pr_url: string
 }
 
 export interface ImplementationRun {
@@ -52,7 +63,13 @@ export interface ImplementationRun {
   instructions?: string | null
   iteration_notes?: string | null
   repo_name: string | null
+  /** Multiple repos selected for this run (e.g. Ecointeractive). Takes precedence over repo_name. */
+  repo_names: string[] | null
   base_branch: string | null
+  /** Cascade environment chain derived from the ticket's Fix Version, e.g. ["staging", "qa", "development"]. */
+  cascade_stages: string[] | null
+  /** PRs opened across all repos/stages of a cascade run. */
+  pr_targets: PrTarget[] | null
   status: RunStatus
   worktree_path: string | null
   branch: string | null
@@ -72,6 +89,8 @@ export interface LaunchRunPayload {
   instructions?: string
   /** Which repo within the connection to use. Defaults to the first if omitted. */
   repo_name?: string
+  /** Multiple repos to target in the same run (e.g. Ecointeractive tickets that touch several repos). */
+  repo_names?: string[]
   /** Base branch for the PR. Defaults to the repo's configured base_branch. */
   base_branch?: string
 }

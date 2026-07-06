@@ -10,7 +10,7 @@ import {
 import { StepTimeline } from "./StepTimeline";
 import type { PromptPreviewData } from "./StepTimeline";
 import { runStatusHint, nextPendingStepId, formatRelative } from "./format";
-import type { ImplementationRun, RunStatus } from "@/lib/clients/implementations";
+import type { ImplementationRun, PrTarget, RunStatus } from "@/lib/clients/implementations";
 
 const RUN_STATUS_TAG: Record<RunStatus, { color: string; label: string }> = {
   queued: { color: "default", label: "Queued" },
@@ -95,6 +95,16 @@ export function RunCard({
 
   const doneCount = run.steps.filter((s) => s.status === "done" || s.status === "skipped").length;
 
+  // Cascade runs (Ecointeractive) open one PR per environment stage, possibly
+  // across several repos — group them for display; legacy single-PR runs fall
+  // back to the single `pr_url` button below.
+  const prGroups = Object.entries(
+    (run.pr_targets ?? []).reduce<Record<string, PrTarget[]>>((acc, t) => {
+      (acc[t.repo_name] ??= []).push(t);
+      return acc;
+    }, {}),
+  );
+
   return (
     <div className="bg-bg-card border border-border-subtle rounded-xl shadow-card overflow-hidden">
       {/* Header */}
@@ -126,6 +136,27 @@ export function RunCard({
           {run.branch && (
             <p className="text-xs text-text-muted m-0 mt-1 font-mono">{run.branch}</p>
           )}
+          {prGroups.length > 0 && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
+              {prGroups.map(([repoName, targets]) => (
+                <div key={repoName} className="flex items-center gap-1">
+                  <span className="text-xs text-text-muted font-mono">{repoName}:</span>
+                  {targets.map((t) => (
+                    <a
+                      key={t.pr_url}
+                      href={t.pr_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={`${t.branch} → ${t.base_branch}`}
+                      className="inline-flex items-center h-5 px-1.5 rounded bg-brand-primary-soft text-brand-primary-hover text-[10.5px] font-semibold uppercase hover:underline"
+                    >
+                      {t.stage}
+                    </a>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
           {run.instructions && (
             <p className="text-xs text-text-secondary m-0 mt-2 whitespace-pre-wrap border-l-2 border-border-subtle pl-2">
               <span className="text-text-muted">Instructions: </span>
@@ -135,7 +166,7 @@ export function RunCard({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {run.pr_url && (
+          {prGroups.length === 0 && run.pr_url && (
             <Button
               size="small"
               icon={<PullRequestOutlined />}
