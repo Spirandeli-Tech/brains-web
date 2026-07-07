@@ -107,7 +107,10 @@ function AutomationCard({
             </Tooltip>
           )}
           {automation.connection_name && (
-            <span className="text-xs text-gray-400">Org: {automation.connection_name}</span>
+            <span className="text-xs text-gray-400">
+              Org: {automation.connection_name}
+              {automation.repo_name && ` · Repo: ${automation.repo_name}`}
+            </span>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">

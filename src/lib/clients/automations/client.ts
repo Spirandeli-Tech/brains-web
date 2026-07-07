@@ -1,5 +1,11 @@
 import { ApiClient } from '../api-client'
-import type { Automation, AutomationRun, CreateAutomationPayload, UpdateAutomationPayload } from './types'
+import type {
+  Automation,
+  AutomationRun,
+  ConnectionInfo,
+  CreateAutomationPayload,
+  UpdateAutomationPayload,
+} from './types'
 
 export class AutomationsClient {
   private client: ApiClient
@@ -18,6 +24,10 @@ export class AutomationsClient {
 
   async listSkills(): Promise<string[]> {
     return this.client.get<string[]>('/automations/skills')
+  }
+
+  async listConnections(): Promise<ConnectionInfo[]> {
+    return this.client.get<ConnectionInfo[]>('/automations/connections')
   }
 
   async createAutomation(payload: CreateAutomationPayload): Promise<Automation> {

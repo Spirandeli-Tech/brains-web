@@ -26,7 +26,7 @@ export interface Automation {
   skill: string
   instructions: string | null
   connection_name: string | null
-  work_dir: string | null
+  repo_name: string | null
   frequency: AutomationFrequency
   day_of_week: number | null
   day_of_month: number | null
@@ -42,7 +42,7 @@ export interface CreateAutomationPayload {
   skill: string
   instructions?: string
   connection_name?: string
-  work_dir?: string
+  repo_name?: string
   frequency: AutomationFrequency
   day_of_week?: number
   day_of_month?: number
@@ -55,11 +55,21 @@ export interface UpdateAutomationPayload {
   skill?: string
   instructions?: string
   connection_name?: string
-  work_dir?: string
+  repo_name?: string
   frequency?: AutomationFrequency
   day_of_week?: number
   day_of_month?: number
   days_of_week?: number[]
   time_of_day?: string
   enabled?: boolean
+}
+
+export interface RepoInfo {
+  name: string
+  base_branch: string
+}
+
+export interface ConnectionInfo {
+  name: string
+  repos: RepoInfo[]
 }

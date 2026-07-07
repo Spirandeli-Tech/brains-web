@@ -251,10 +251,10 @@ export function AutomationDetailPage() {
                 </div>
               )}
               {automation.connection_name && (
-                <span className="text-xs text-gray-400">Org: {automation.connection_name}</span>
-              )}
-              {automation.work_dir && (
-                <span className="text-xs text-gray-400 font-mono">{automation.work_dir}</span>
+                <span className="text-xs text-gray-400">
+                  Org: {automation.connection_name}
+                  {automation.repo_name && ` · Repo: ${automation.repo_name}`}
+                </span>
               )}
             </div>
           </DataCard>

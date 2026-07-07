@@ -16,6 +16,7 @@ import automationsClient from "@/lib/clients/automations";
 import type {
   Automation,
   AutomationFrequency,
+  ConnectionInfo,
   CreateAutomationPayload,
   UpdateAutomationPayload,
 } from "@/lib/clients/automations";
@@ -28,7 +29,7 @@ interface FormValues {
   skill: string;
   instructions?: string;
   connection_name?: string;
-  work_dir?: string;
+  repo_name?: string;
   frequency: AutomationFrequency;
   day_of_week?: number;
   day_of_month?: number;
@@ -54,9 +55,17 @@ export function AutomationFormModal({
   const [form] = Form.useForm<FormValues>();
   const [saving, setSaving] = useState(false);
   const [skillOptions, setSkillOptions] = useState<{ value: string }[]>([]);
+  const [connections, setConnections] = useState<ConnectionInfo[]>([]);
   const frequency = Form.useWatch("frequency", form);
+  const connectionName = Form.useWatch("connection_name", form);
   const isEdit = !!automation;
   const prefillFrom = automation ?? duplicateFrom;
+
+  const selectedConnection = connections.find((c) => c.name === connectionName);
+  const repoOptions = (selectedConnection?.repos ?? []).map((r) => ({
+    label: r.name,
+    value: r.name,
+  }));
 
   useEffect(() => {
     if (!open) return;
@@ -64,6 +73,10 @@ export function AutomationFormModal({
       .listSkills()
       .then((skills) => setSkillOptions(skills.map((s) => ({ value: s }))))
       .catch(() => setSkillOptions([]));
+    automationsClient
+      .listConnections()
+      .then(setConnections)
+      .catch(() => setConnections([]));
   }, [open]);
 
   useEffect(() => {
@@ -74,7 +87,7 @@ export function AutomationFormModal({
         skill: prefillFrom.skill,
         instructions: prefillFrom.instructions ?? undefined,
         connection_name: prefillFrom.connection_name ?? undefined,
-        work_dir: prefillFrom.work_dir ?? undefined,
+        repo_name: prefillFrom.repo_name ?? undefined,
         frequency: prefillFrom.frequency,
         day_of_week: prefillFrom.day_of_week ?? undefined,
         day_of_month: prefillFrom.day_of_month ?? undefined,
@@ -86,6 +99,11 @@ export function AutomationFormModal({
     }
   }, [open, prefillFrom, form]);
 
+  // Changing the org invalidates whatever repo was picked for the previous one.
+  const handleConnectionChange = () => {
+    form.setFieldValue("repo_name", undefined);
+  };
+
   const handleSubmit = async () => {
     const values = await form.validateFields();
     setSaving(true);
@@ -96,7 +114,7 @@ export function AutomationFormModal({
         instructions: values.instructions || undefined,
         frequency: values.frequency,
         connection_name: values.connection_name || undefined,
-        work_dir: values.work_dir || undefined,
+        repo_name: values.repo_name || undefined,
         day_of_week: values.day_of_week,
         day_of_month: values.day_of_month,
         days_of_week: values.days_of_week,
@@ -217,13 +235,28 @@ export function AutomationFormModal({
           <TimePicker format="HH:mm" minuteStep={15} style={{ width: "100%" }} />
         </Form.Item>
 
-        <Form.Item name="connection_name" label="Connection (optional)">
-          <Input placeholder="Spirandeli" />
+        <Form.Item
+          name="connection_name"
+          label="Organization (optional)"
+          extra="Which org's repo(s) and env this runs against. Leave blank to run against the runner's default checkout."
+        >
+          <Select
+            allowClear
+            placeholder="Select an organization"
+            options={connections.map((c) => ({ label: c.name, value: c.name }))}
+            onChange={handleConnectionChange}
+          />
         </Form.Item>
 
-        <Form.Item name="work_dir" label="Work directory (optional)">
-          <Input placeholder="/Users/you/Work/MyProject" />
-        </Form.Item>
+        {connectionName && repoOptions.length > 0 && (
+          <Form.Item
+            name="repo_name"
+            label="Repository (optional)"
+            extra="Leave blank to use the organization's default repo."
+          >
+            <Select allowClear placeholder="Select a repository" options={repoOptions} />
+          </Form.Item>
+        )}
       </Form>
     </Modal>
   );
