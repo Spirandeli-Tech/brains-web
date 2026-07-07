@@ -22,6 +22,7 @@ import { ImplementationsPage } from "@/pages/Implementations";
 import { AutomationsPage } from "@/pages/Automations";
 import { AutomationDetailPage } from "@/pages/Automations/AutomationDetail";
 import { CodeReviewPage } from "@/pages/CodeReview";
+import { AddressPrPage } from "@/pages/AddressPr";
 import { AppLayout } from "@/components/templates";
 import { theme } from "@/theme/antd-theme";
 
@@ -59,6 +60,7 @@ const router = createBrowserRouter([
       },
       { path: "implementations", element: <ImplementationsPage /> },
       { path: "code-review", element: <CodeReviewPage /> },
+      { path: "address-pr-comments", element: <AddressPrPage /> },
       {
         path: "automations",
         children: [
