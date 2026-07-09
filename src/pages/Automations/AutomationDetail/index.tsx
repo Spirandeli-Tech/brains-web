@@ -66,7 +66,20 @@ function RunCard({ run, automation }: { run: AutomationRun; automation: Automati
 
       {run.result_summary && (
         <div>
-          <p className="text-xs font-semibold text-gray-500 mb-1">Result</p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs font-semibold text-gray-500">Result</p>
+            <Tooltip title="Copy to clipboard">
+              <Button
+                icon={<CopyOutlined />}
+                size="small"
+                type="text"
+                onClick={() => {
+                  navigator.clipboard.writeText(run.result_summary ?? "");
+                  message.success("Copied to clipboard");
+                }}
+              />
+            </Tooltip>
+          </div>
           <pre
             className="text-[11px] font-mono rounded overflow-auto whitespace-pre-wrap break-words max-h-64 p-2.5 leading-relaxed"
             style={LOG_BLOCK_STYLE}
@@ -208,10 +221,9 @@ export function AutomationDetailPage() {
             subtitle={`${automation.skill} · ${formatFrequency(automation)}`}
             actions={
               <div className="flex items-center gap-2">
-                <Tooltip title={automation.enabled ? "Run now" : "Enable the automation to run it"}>
+                <Tooltip title="Run now">
                   <Button
                     icon={<PlayCircleOutlined />}
-                    disabled={!automation.enabled}
                     loading={running}
                     onClick={handleRun}
                   >

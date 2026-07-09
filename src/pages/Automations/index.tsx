@@ -114,11 +114,10 @@ function AutomationCard({
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <Tooltip title={automation.enabled ? "Run now" : "Enable the automation to run it"}>
+          <Tooltip title="Run now">
             <Button
               icon={<PlayCircleOutlined />}
               size="small"
-              disabled={!automation.enabled}
               loading={running === automation.id}
               onClick={() => onRun(automation.id)}
             />
