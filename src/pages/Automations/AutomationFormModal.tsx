@@ -30,6 +30,7 @@ interface FormValues {
   instructions?: string;
   connection_name?: string;
   repo_name?: string;
+  claude_model?: string;
   frequency: AutomationFrequency;
   day_of_week?: number;
   day_of_month?: number;
@@ -88,6 +89,7 @@ export function AutomationFormModal({
         instructions: prefillFrom.instructions ?? undefined,
         connection_name: prefillFrom.connection_name ?? undefined,
         repo_name: prefillFrom.repo_name ?? undefined,
+        claude_model: prefillFrom.claude_model ?? undefined,
         frequency: prefillFrom.frequency,
         day_of_week: prefillFrom.day_of_week ?? undefined,
         day_of_month: prefillFrom.day_of_month ?? undefined,
@@ -115,6 +117,7 @@ export function AutomationFormModal({
         frequency: values.frequency,
         connection_name: values.connection_name || undefined,
         repo_name: values.repo_name || undefined,
+        claude_model: values.claude_model || undefined,
         day_of_week: values.day_of_week,
         day_of_month: values.day_of_month,
         days_of_week: values.days_of_week,
@@ -181,6 +184,22 @@ export function AutomationFormModal({
           <Input.TextArea
             rows={4}
             placeholder="e.g. Focus on the API repo, skip the frontend. Post the summary to #eng-status."
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="claude_model"
+          label="Model"
+          extra="Which Claude model runs this automation. Use Haiku for quick, low-complexity tasks — it's faster and cheaper. Leave blank for the default (Sonnet)."
+        >
+          <Select
+            allowClear
+            placeholder="Default (Sonnet)"
+            options={[
+              { label: "Sonnet — balanced, default", value: "sonnet" },
+              { label: "Haiku — fastest, for simple/operational tasks", value: "haiku" },
+              { label: "Opus — highest quality, slower", value: "opus" },
+            ]}
           />
         </Form.Item>
 

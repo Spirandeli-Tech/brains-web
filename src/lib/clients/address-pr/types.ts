@@ -59,6 +59,7 @@ export interface FixRun {
   repo_name: string | null
   ticket_key: string | null
   instructions?: string | null
+  claude_model?: string | null
   status: RunStatus
   worktree_path?: string | null
   branch?: string | null
@@ -75,6 +76,7 @@ export interface LaunchAddressPrPayload {
   repo_name?: string
   ticket_key?: string
   instructions?: string
+  claude_model?: string
 }
 
 export interface AddressPrStats {

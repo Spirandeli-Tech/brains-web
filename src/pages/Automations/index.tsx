@@ -112,6 +112,11 @@ function AutomationCard({
               {automation.repo_name && ` · Repo: ${automation.repo_name}`}
             </span>
           )}
+          {automation.claude_model && (
+            <span className="text-xs text-gray-400 capitalize">
+              Model: {automation.claude_model}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Tooltip title="Run now">

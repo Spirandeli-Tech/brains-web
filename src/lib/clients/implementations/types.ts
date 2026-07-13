@@ -62,6 +62,7 @@ export interface ImplementationRun {
   ticket_summary: string | null
   instructions?: string | null
   iteration_notes?: string | null
+  claude_model?: string | null
   repo_name: string | null
   /** Multiple repos selected for this run (e.g. Ecointeractive). Takes precedence over repo_name. */
   repo_names: string[] | null
@@ -93,6 +94,8 @@ export interface LaunchRunPayload {
   repo_names?: string[]
   /** Base branch for the PR. Defaults to the repo's configured base_branch. */
   base_branch?: string
+  /** Claude model for this run's steps, e.g. "haiku". Blank = default (sonnet). */
+  claude_model?: string
 }
 
 export interface RepoInfo {

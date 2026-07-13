@@ -59,6 +59,7 @@ export interface ReviewRun {
   repo_name: string | null
   ticket_key: string | null
   instructions?: string | null
+  claude_model?: string | null
   status: RunStatus
   review_action: ReviewAction | null
   review_plan: ReviewPlan | null
@@ -74,6 +75,7 @@ export interface LaunchReviewPayload {
   repo_name?: string
   ticket_key?: string
   instructions?: string
+  claude_model?: string
 }
 
 export interface ReviewStats {

@@ -27,6 +27,7 @@ export interface Automation {
   instructions: string | null
   connection_name: string | null
   repo_name: string | null
+  claude_model: string | null
   frequency: AutomationFrequency
   day_of_week: number | null
   day_of_month: number | null
@@ -43,6 +44,7 @@ export interface CreateAutomationPayload {
   instructions?: string
   connection_name?: string
   repo_name?: string
+  claude_model?: string
   frequency: AutomationFrequency
   day_of_week?: number
   day_of_month?: number
@@ -56,6 +58,7 @@ export interface UpdateAutomationPayload {
   instructions?: string
   connection_name?: string
   repo_name?: string
+  claude_model?: string
   frequency?: AutomationFrequency
   day_of_week?: number
   day_of_month?: number

@@ -46,6 +46,7 @@ export function LaunchModal({
   const [repoName, setRepoName] = useState<string>("");
   const [repos, setRepos] = useState<{ name: string; base_branch: string }[]>([]);
   const [instructions, setInstructions] = useState("");
+  const [claudeModel, setClaudeModel] = useState<string>("");
   const [launching, setLaunching] = useState(false);
 
   useEffect(() => {
@@ -55,6 +56,7 @@ export function LaunchModal({
     setRepoName("");
     setRepos([]);
     setInstructions("");
+    setClaudeModel("");
   }, [open, initialPrUrl, initialConnectionId, connections]);
 
   const selectedConnectionName = useMemo(
@@ -111,6 +113,7 @@ export function LaunchModal({
         pr_url: prUrl.trim(),
         repo_name: repoName || undefined,
         instructions: instructions.trim() || undefined,
+        claude_model: claudeModel || undefined,
       });
       message.success("Review iniciado!");
       onLaunched();
@@ -198,6 +201,24 @@ export function LaunchModal({
             onChange={(e) => setInstructions(e.target.value)}
             autoSize={{ minRows: 2, maxRows: 4 }}
             maxLength={500}
+          />
+        </div>
+
+        {/* Model */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-text-secondary uppercase tracking-wide">
+            Modelo (opcional)
+          </label>
+          <Select
+            allowClear
+            placeholder="Padrão (Sonnet)"
+            value={claudeModel || undefined}
+            onChange={(v) => setClaudeModel(v ?? "")}
+            options={[
+              { label: "Sonnet — equilibrado, padrão", value: "sonnet" },
+              { label: "Haiku — mais rápido, para reviews simples", value: "haiku" },
+              { label: "Opus — qualidade máxima, mais lento", value: "opus" },
+            ]}
           />
         </div>
 

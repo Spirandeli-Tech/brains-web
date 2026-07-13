@@ -60,6 +60,7 @@ export function LaunchModal({
   const [reposLoading, setReposLoading] = useState(false);
   const [baseBranch, setBaseBranch] = useState<string>("");
   const [instructions, setInstructions] = useState("");
+  const [claudeModel, setClaudeModel] = useState<string>("");
   const [selectedSteps, setSelectedSteps] = useState<StepKind[]>(DEFAULT_STEPS);
   const [researchMode, setResearchMode] = useState(false);
   const [launching, setLaunching] = useState(false);
@@ -72,6 +73,7 @@ export function LaunchModal({
     setRepos([]);
     setBaseBranch("");
     setInstructions("");
+    setClaudeModel("");
     setSelectedSteps(DEFAULT_STEPS);
     setResearchMode(false);
   }, [open, initialTicketUrl, initialConnectionId, connections]);
@@ -185,6 +187,7 @@ export function LaunchModal({
             ? { repo_names: repoNames.length ? repoNames : undefined }
             : { repo_name: repoNames[0] || undefined }),
           base_branch: baseBranch.trim() || undefined,
+          claude_model: claudeModel || undefined,
         },
         conn ? { connection_name: conn.display_name, provider: conn.provider } : undefined,
       );
@@ -384,6 +387,27 @@ export function LaunchModal({
             />
             <p className="text-xs text-text-muted m-0 mt-1">
               Layered on top of the ticket before Claude starts.
+            </p>
+          </div>
+
+          <div className="mt-3.5">
+            <label className="text-[13px] font-semibold text-text-primary block mb-1.5">
+              Model <span className="text-text-muted font-normal">— optional</span>
+            </label>
+            <Select
+              className="w-full"
+              allowClear
+              placeholder="Default (Sonnet)"
+              value={claudeModel || undefined}
+              onChange={(v) => setClaudeModel(v ?? "")}
+              options={[
+                { label: "Sonnet — balanced, default", value: "sonnet" },
+                { label: "Haiku — fastest, for simple/operational tickets", value: "haiku" },
+                { label: "Opus — highest quality, slower", value: "opus" },
+              ]}
+            />
+            <p className="text-xs text-text-muted m-0 mt-1">
+              Applies to every step in this run. Use Haiku for quick, low-complexity tickets.
             </p>
           </div>
         </section>
