@@ -1,15 +1,38 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { DownOutlined } from "@ant-design/icons";
+import { Badge } from "antd";
 import { NAV_OPTIONS } from "@/constants/navigation";
 import type { NavOption } from "@/constants/navigation";
 import { Logo } from "@/components/atoms";
 import { useAuth } from "@/context/auth";
+import briefingClient from "@/lib/clients/briefing";
+
+const UNSEEN_POLL_INTERVAL_MS = 60000;
 
 export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [unseenCount, setUnseenCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchUnseen = () => {
+      briefingClient
+        .getBriefing()
+        .then((data) => {
+          if (!cancelled) setUnseenCount(data.unseen_count);
+        })
+        .catch(() => {});
+    };
+    fetchUnseen();
+    const interval = window.setInterval(fetchUnseen, UNSEEN_POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [location.pathname]);
 
   const isAdmin = user?.role === "ADMIN";
 
@@ -71,6 +94,9 @@ export function Sidebar() {
                   {item.icon}
                 </span>
                 <span className="flex-1 text-left">{item.label}</span>
+                {item.path === "/dashboard" && unseenCount > 0 && (
+                  <Badge count={unseenCount} size="small" />
+                )}
                 {hasChildren && (
                   <DownOutlined
                     className={`text-[10px] text-text-muted transition-transform duration-200 ${
