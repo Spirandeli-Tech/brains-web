@@ -6,17 +6,9 @@ import briefingClient from "@/lib/clients/briefing";
 import type { Briefing } from "@/lib/clients/briefing";
 import proposalsClient from "@/lib/clients/proposals";
 import { PageHeader, DataCard } from "@/components/molecules";
+import { SOURCE_LABELS } from "@/constants/platform-events";
 
 const POLL_INTERVAL_MS = 30000;
-
-const SOURCE_LABELS: Record<string, string> = {
-  implementation: "Implementação",
-  code_review: "Code review",
-  address_pr: "Address PR",
-  automation: "Automação",
-  watcher: "Watcher",
-  system: "Sistema",
-};
 
 const DAILY_STATS: { source: string; label: string; color: string }[] = [
   { source: "implementation", label: "Implementações feitas", color: "#42A5F5" },
@@ -88,11 +80,6 @@ export function DashboardPage() {
   useEffect(() => {
     fetchBriefing();
   }, [fetchBriefing]);
-
-  useEffect(() => {
-    if (!briefing) return;
-    briefingClient.markSeen().catch(() => {});
-  }, [briefing?.date]);
 
   useEffect(() => {
     if (!briefing) return;
