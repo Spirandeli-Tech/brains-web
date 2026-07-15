@@ -288,6 +288,14 @@ tempo; Watcher = gatilho por estado do mundo.**
 3. **Voz:** o briefing falado (TTS do texto que a fase 1 já gera) é o passo
    barato; conversa fluida por voz (realtime API) é o passo caro. Slack no
    celular é o trampolim intermediário.
+4. **Resumo do dia a partir do board da Jira:** visitar o sprint/board ativo
+   (todas as orgs) e gerar, dentro da narrativa do `/briefing` ("Bom dia..."),
+   um resumo do que o dia poderia ser — tickets no sprint, prioridades,
+   o que está travado/parado. É uma instância concreta do planner (item 2
+   acima) aplicada à narrativa: hoje ela só reporta o que já rodou (seção
+   5.3); essa ideia faz ela também sugerir o que fazer. Puramente leitura no
+   V1 (sem criar proposal/run) — só enriquece o texto de abertura do
+   briefing.
 
 ---
 
