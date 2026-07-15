@@ -41,4 +41,5 @@ export interface Briefing {
   failures: BriefingEvent[]
   timeline: BriefingEvent[]
   unseen_count: number
+  in_progress: Record<string, number>
 }

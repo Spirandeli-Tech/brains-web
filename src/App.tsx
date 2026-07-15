@@ -21,6 +21,7 @@ import { ProductivityUserPage } from "@/pages/ProductivityUser";
 import { ImplementationsPage } from "@/pages/Implementations";
 import { AutomationsPage } from "@/pages/Automations";
 import { AutomationDetailPage } from "@/pages/Automations/AutomationDetail";
+import { WatchersPage } from "@/pages/Watchers";
 import { CodeReviewPage } from "@/pages/CodeReview";
 import { AddressPrPage } from "@/pages/AddressPr";
 import { AppLayout } from "@/components/templates";
@@ -68,6 +69,7 @@ const router = createBrowserRouter([
           { path: ":id", element: <AutomationDetailPage /> },
         ],
       },
+      { path: "watchers", element: <WatchersPage /> },
       { path: "users", element: <UsersPage /> },
       { path: "settings", element: <SettingsPage /> },
     ],

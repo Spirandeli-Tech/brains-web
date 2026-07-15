@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button, Empty, Spin, Tag, message } from "antd";
 import { CheckOutlined, CloseOutlined, ReloadOutlined } from "@ant-design/icons";
@@ -18,8 +18,42 @@ const SOURCE_LABELS: Record<string, string> = {
   system: "Sistema",
 };
 
+const DAILY_STATS: { source: string; label: string; color: string }[] = [
+  { source: "implementation", label: "Implementações feitas", color: "#42A5F5" },
+  { source: "code_review", label: "PRs revisados", color: "#7CB342" },
+  { source: "automation", label: "Automações rodadas", color: "#FBC02D" },
+  { source: "address_pr", label: "Address PR", color: "#AB47BC" },
+];
+
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function StatTile({
+  label,
+  value,
+  color,
+  inProgress,
+}: {
+  label: string;
+  value: number;
+  color: string;
+  inProgress: number;
+}) {
+  return (
+    <div className="bg-bg-card border border-border-subtle rounded-xl shadow-card overflow-hidden">
+      <div style={{ height: 4, backgroundColor: color }} />
+      <div className="p-4">
+        <p className="text-xs font-medium text-text-muted uppercase tracking-wide m-0">{label}</p>
+        <p className="text-2xl font-semibold text-text-primary m-0 mt-1">{value}</p>
+        {inProgress > 0 && (
+          <p className="text-xs text-text-muted m-0 mt-1">
+            +{inProgress} em andamento (não precisa de você ainda)
+          </p>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function DashboardPage() {
@@ -28,6 +62,14 @@ export function DashboardPage() {
   const [decidingId, setDecidingId] = useState<string | null>(null);
 
   const pollRef = useRef<number | null>(null);
+
+  const statCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const event of briefing?.done ?? []) {
+      counts[event.source] = (counts[event.source] ?? 0) + 1;
+    }
+    return counts;
+  }, [briefing]);
 
   const fetchBriefing = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -107,6 +149,21 @@ export function DashboardPage() {
           </Button>
         }
       />
+
+      <DataCard>
+        <h3 className="text-sm font-semibold text-text-primary mb-3">Estatísticas do dia</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {DAILY_STATS.map((stat) => (
+            <StatTile
+              key={stat.source}
+              label={stat.label}
+              value={statCounts[stat.source] ?? 0}
+              color={stat.color}
+              inProgress={briefing?.in_progress[stat.source] ?? 0}
+            />
+          ))}
+        </div>
+      </DataCard>
 
       <DataCard>
         <h3 className="text-sm font-semibold text-text-primary mb-3">Aguardando você</h3>
