@@ -14,11 +14,13 @@ interface WatcherFormModalProps {
 
 const KIND_OPTIONS = [
   { label: "PRs aguardando minha review", value: "github_review_requested" },
+  { label: "Feedback nos meus PRs", value: "github_reviews_received" },
   { label: "Tickets no backlog (fora da sprint)", value: "jira_backlog_assigned" },
 ];
 
 const DEFAULT_INTERVAL: Record<string, number> = {
   github_review_requested: 10,
+  github_reviews_received: 10,
   jira_backlog_assigned: 30,
 };
 
@@ -31,19 +33,22 @@ export function WatcherFormModal({ open, watcher, onClose, onSaved }: WatcherFor
   const [saving, setSaving] = useState(false);
 
   const isEdit = !!watcher;
-  const isReview = kind === "github_review_requested";
+  // github_review_requested is the only kind with an auto-publish choice
+  // (comment/request_changes/approve can post unattended); the others always gate.
+  const isReviewRequested = kind === "github_review_requested";
+  // Both GitHub watchers drive `gh` against a GitHub connection; the backlog
+  // watcher hits Jira (any org), so it can use every connection.
+  const isGithub = kind === "github_review_requested" || kind === "github_reviews_received";
 
   useEffect(() => {
     if (!open) return;
-    // github_review_requested only knows how to check GitHub (`gh search prs`);
-    // the backlog watcher hits Jira (any org), so it can use every connection.
     productivityClient
       .listConnections()
       .then((list) =>
-        setConnections(isReview ? list.filter((c) => c.provider === "github") : list),
+        setConnections(isGithub ? list.filter((c) => c.provider === "github") : list),
       )
       .catch(() => {});
-  }, [open, isReview]);
+  }, [open, isGithub]);
 
   useEffect(() => {
     if (!open) return;
@@ -66,7 +71,7 @@ export function WatcherFormModal({ open, watcher, onClose, onSaved }: WatcherFor
     if (!canSave) return;
     setSaving(true);
     try {
-      const config = isReview ? { auto_publish: autoPublish } : {};
+      const config = isReviewRequested ? { auto_publish: autoPublish } : {};
       if (isEdit && watcher) {
         await watchersClient.updateWatcher(watcher.id, {
           connection_id: connectionId,
@@ -124,9 +129,11 @@ export function WatcherFormModal({ open, watcher, onClose, onSaved }: WatcherFor
             options={connections.map((c) => ({ label: c.display_name, value: c.id }))}
           />
           <span className="text-xs text-text-muted">
-            {isReview
+            {kind === "github_review_requested"
               ? "PRs onde você é reviewer requisitado nessa org viram review automaticamente."
-              : "Tickets atribuídos a você que estão no backlog (fora de qualquer sprint) viram propostas."}
+              : kind === "github_reviews_received"
+                ? "Feedback novo nos seus PRs abertos dessa org vira um run que prepara os fixes e para pra você aprovar antes de commitar/responder."
+                : "Tickets atribuídos a você que estão no backlog (fora de qualquer sprint) viram propostas."}
           </span>
         </div>
 
@@ -142,7 +149,7 @@ export function WatcherFormModal({ open, watcher, onClose, onSaved }: WatcherFor
           />
         </div>
 
-        {isReview && (
+        {isReviewRequested && (
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between gap-3">
               <label className="text-xs font-semibold text-text-secondary uppercase tracking-wide">

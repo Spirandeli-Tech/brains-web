@@ -1,4 +1,7 @@
-export type WatcherKind = 'github_review_requested' | 'jira_backlog_assigned'
+export type WatcherKind =
+  | 'github_review_requested'
+  | 'github_reviews_received'
+  | 'jira_backlog_assigned'
 export type WatcherStatus = 'ok' | 'error'
 
 export interface Watcher {

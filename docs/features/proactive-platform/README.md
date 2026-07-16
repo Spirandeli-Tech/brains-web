@@ -7,8 +7,13 @@ proativo, mas ainda são "agendar uma skill num horário" — não reagem ao mun
 e o resultado morre no banco até eu abrir a página certa.
 
 > **Status:** Fase 1 (briefing + ledger + watchdog) entregue. Fase 2 com o
-> framework de watchers pronto e o W1 (`github_review_requested`) rodando com
-> auto-publish + gates inteligentes (ver §6.2). Faltam W2, W3 e a Fase 3 (Slack).
+> framework de watchers pronto: **W1** (`github_review_requested`) com
+> auto-publish + gates inteligentes (§6.2), **W2** (`github_reviews_received`)
+> criando `address_pr_run` gated (§6.2), e o `jira_backlog_assigned` (variante
+> do W3, achado → proposal). **Fase 3 (Slack) entregue** em mão-única: notifier
+> por DM + digest matinal, ligado por env (§7). A **Fase 4a (planejadora)** —
+> lê os boards Jira e gera proposals `source=planner` — também já rodou. Falta
+> o bridge bidirecional do Slack (§8.5) e o resto da Fase 4.
 > **Objetivo máximo:** devolver tempo. A plataforma detecta, prepara, e eu só aprovo.
 
 ---
@@ -235,11 +240,17 @@ re-checa o estado do PR — se fechou/mergeou desde que o run nasceu, **descarta
 a review (step `skipped`, run `done`) e registra no briefing, em vez de comentar
 num PR morto. Vale pros runs manuais também.
 
-**W2 — `github_reviews_received`** (feedback nos meus PRs)
-Para meus PRs abertos (`gh pr list --author @me`), detecta reviews/comments
-novos desde o último sighting. Achado → cria `address_pr_run` que roda
+**W2 — `github_reviews_received`** (feedback nos meus PRs) — ✅ **entregue**
+Meus PRs abertos vêm de `gh search prs --author=@me --state=open -- draft:false`
+(cobre multi-repo por org); pra cada um, `gh pr view <url> --json reviews,comments`
+extrai o feedback. Cada item acionável de terceiros vira um sighting
+(`repo#pr:review:<id>` / `:comment:<id>`) — reviews `APPROVED` sem corpo e
+comentários meus são filtrados. Achado novo → cria `address_pr_run` que roda
 `fix_draft` e **pausa nos gates existentes** (antes de `commit_push` e de
-`post_replies`). No briefing: "Preparei fixes pro feedback no BEON-123 — aprova?"
+`post_replies`). Dedup por `address_pr_service.has_active_run_for_pr`: só o
+primeiro feedback por PR cria run; os demais (enquanto ele está aberto) são
+registrados mas não forkam um segundo. No briefing/Slack: "Preparei fixes pro
+feedback no BEON-123 — aprova?"
 
 **W3 — `jira_enrich_candidates`** (tickets precisando de spec)
 JQL por org (ex.: sprint aberto, sem comentário "Technical Implementation
@@ -269,18 +280,26 @@ tempo; Watcher = gatilho por estado do mundo.**
 
 ---
 
-## 7. Fase 3 — Slack (a plataforma te alcança)
+## 7. Fase 3 — Slack (a plataforma te alcança) — ✅ entregue (mão-única)
 
 **Entrega:** não preciso abrir o Brains pra saber que algo espera por mim.
 
 - `api/app/services/notifier.py`: adapter Slack (bot token + user id pra DM em
-  `api/.env`). Consome `platform_events` — roteamento por `event_type`:
-  `awaiting_approval` e `proposal_created` e `run_failed` notificam;
-  `run_started` não. Preferências em `user_preferences`.
-- Envio no próprio `emit_event` (best-effort, nunca bloqueia o fluxo; falha de
-  Slack vira log, não erro de run).
-- **Digest matinal:** passo novo no `run_cycle` do scheduler — no horário
-  configurado, monta o briefing e posta no Slack com link pra `/briefing`.
+  `api/.env`, scopes `chat:write` + `im:write`). Consome `platform_events` —
+  roteamento por `event_type` em `NOTIFY_EVENT_TYPES`: `awaiting_approval`,
+  `proposal_created` e `run_failed` notificam; `run_started` e o resto não.
+- **Ligado por env, não por `user_preferences`.** `platform_events` são globais
+  do operador (não têm `user_id`), então gatear por presença de
+  `SLACK_BOT_TOKEN`+`SLACK_USER_ID` (como o `RUNNER_TOKEN`) é mais simples e
+  correto que uma linha de preferência ambígua. Toggle na UI de Settings fica
+  como refinamento futuro (aí sim com migração).
+- Envio no próprio `emit_event` (best-effort com timeout curto, nunca bloqueia
+  o fluxo; falha de Slack vira log, não erro de run). Dispara antes do commit —
+  aceitável no volume atual, não há post-commit hook.
+- **Digest matinal:** `maybe_send_daily_digest` no `run_cycle` do scheduler — no
+  `planner_hour` do operador, monta o briefing e posta no Slack com link pra
+  `/briefing`. Dedup por um `platform_event` `digest_sent` (uma vez por dia UTC,
+  sobrevive a restart) — sem coluna/migração nova.
 - Limitação aceita: botões interativos do Slack exigem URL pública (Request
   URL) — fora do escopo até existir túnel/VPS (fase 4). v1: mensagens carregam
   deep links pra UI local. Aprovar continua sendo 1 clique, só que na web.
@@ -307,21 +326,40 @@ tempo; Watcher = gatilho por estado do mundo.**
    acima) aplicada à narrativa: hoje ela só reporta o que já rodou (seção
    5.3); essa ideia faz ela também sugerir o que fazer. Puramente leitura no
    V1 (sem criar proposal/run) — só enriquece o texto de abertura do
-   briefing.
+   briefing. *(Parte da 4a já entregou proposals a partir do board; falta a
+   narrativa enriquecida no `/briefing`.)*
+
+5. **Slack bidirecional (a plataforma me ouve e responde):** hoje o Slack é
+   mão-única (§7). O upgrade é **Socket Mode** — o app-level token
+   (`xapp-...`) recebe `message.im` por WebSocket **sem URL pública**, então
+   funciona no Mac hoje, diferente dos botões interativos (que exigem Request
+   URL, item 1). Desenho:
+   - Ligar o *Messages Tab* no App Home (senão o Slack bloqueia o envio pro app).
+   - Um **bridge no runner** (princípio 2: é onde vivem credenciais e skills)
+     escuta os eventos via Socket Mode; cada DM minha vira um `claude -p` com
+     contexto do Brains (proposals pendentes, status de runs) e a resposta
+     volta na thread.
+   - Escopo natural: **comandar a plataforma por conversa** — "aprova a proposta
+     X", "status do BEON-123", "roda /enrich no NOVO-88" — reaproveitando os
+     `action_kind` de `proposals` e os services de run já existentes. É o
+     trampolim concreto pra "voz" (item 3): texto no Slack primeiro, TTS/realtime
+     depois. Alternativa off-the-shelf pra chat genérico (sem contexto do
+     Brains): o app oficial "Claude no Slack".
 
 ---
 
 ## 9. Ordem, dependências e tamanho
 
-| Fase | Depende de | Tamanho relativo | Valor entregue |
-|---|---|---|---|
-| 1. Briefing + ledger + hardening | — | **M** (2 tabelas, 3 endpoints, 1 página, emit nos services) | Visibilidade total do que já roda; 1 clique pra aprovar |
-| 2. Watchers | Fase 1 (ledger/proposals) | **L** (2 tabelas, fila nova no runner, 3 checks, UI) | O fim do "colar link de PR" — o core do tempo devolvido |
-| 3. Slack | Fase 1 (eventos) | **S** (1 adapter, roteamento, digest) | Alcance fora da tela |
-| 4. Horizonte | Fases 1–3 | — | 24/7, planner, voz |
+| Fase | Depende de | Tamanho relativo | Valor entregue | Status |
+|---|---|---|---|---|
+| 1. Briefing + ledger + hardening | — | **M** (2 tabelas, 3 endpoints, 1 página, emit nos services) | Visibilidade total do que já roda; 1 clique pra aprovar | ✅ |
+| 2. Watchers | Fase 1 (ledger/proposals) | **L** (2 tabelas, fila nova no runner, 3 checks, UI) | O fim do "colar link de PR" — o core do tempo devolvido | ✅ W1+W2+backlog |
+| 3. Slack (mão-única) | Fase 1 (eventos) | **S** (1 adapter, roteamento, digest) | Alcance fora da tela | ✅ |
+| 4a. Planejadora (Jira board) | Fase 1 (proposals) | **M** (planner_run, síntese haiku no runner, Insights) | Ela sugere o que fazer, não só reporta | ✅ |
+| 4. Horizonte (webhooks/VPS, planner amplo, Slack bidirecional, voz) | Fases 1–3 | — | 24/7, conversa, voz | — |
 
-Fases 2 e 3 são independentes entre si — se quiser sentir o "ela me avisa"
-antes do "ela percebe", dá pra inverter.
+Fases 2 e 3 eram independentes entre si — foram entregues nas duas ordens ao
+longo do caminho.
 
 ---
 

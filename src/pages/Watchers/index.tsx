@@ -8,6 +8,8 @@ import { WatcherFormModal } from "./WatcherFormModal";
 
 const KIND_LABELS: Record<string, string> = {
   github_review_requested: "PRs aguardando sua review",
+  github_reviews_received: "Feedback nos seus PRs",
+  jira_backlog_assigned: "Tickets no backlog (fora da sprint)",
 };
 
 const POLL_INTERVAL_MS = 15000;
