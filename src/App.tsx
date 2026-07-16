@@ -22,6 +22,7 @@ import { ImplementationsPage } from "@/pages/Implementations";
 import { AutomationsPage } from "@/pages/Automations";
 import { AutomationDetailPage } from "@/pages/Automations/AutomationDetail";
 import { WatchersPage } from "@/pages/Watchers";
+import { InsightsPage } from "@/pages/Insights";
 import { CodeReviewPage } from "@/pages/CodeReview";
 import { AddressPrPage } from "@/pages/AddressPr";
 import { AppLayout } from "@/components/templates";
@@ -70,6 +71,7 @@ const router = createBrowserRouter([
         ],
       },
       { path: "watchers", element: <WatchersPage /> },
+      { path: "insights", element: <InsightsPage /> },
       { path: "users", element: <UsersPage /> },
       { path: "settings", element: <SettingsPage /> },
     ],

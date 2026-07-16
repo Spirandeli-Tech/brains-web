@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button, Empty, Spin, Tag, message } from "antd";
+import { Button, Empty, Popconfirm, Spin, Tag, message } from "antd";
 import { CheckOutlined, CloseOutlined, ReloadOutlined } from "@ant-design/icons";
 import briefingClient from "@/lib/clients/briefing";
-import type { Briefing } from "@/lib/clients/briefing";
+import type { Briefing, ProposalRead } from "@/lib/clients/briefing";
 import proposalsClient from "@/lib/clients/proposals";
 import { PageHeader, DataCard } from "@/components/molecules";
 import { SOURCE_LABELS } from "@/constants/platform-events";
@@ -19,6 +19,23 @@ const DAILY_STATS: { source: string; label: string; color: string }[] = [
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+// Section proposals under the org that owns them (from action_payload), keeping
+// first-seen order so the list doesn't reshuffle between polls.
+function proposalOrg(p: ProposalRead): string {
+  const cn = (p.action_payload as Record<string, unknown> | null)?.connection_name;
+  return typeof cn === "string" && cn ? cn : "Outros";
+}
+
+function groupProposalsByOrg(proposals: ProposalRead[]): { org: string; items: ProposalRead[] }[] {
+  const groups = new Map<string, ProposalRead[]>();
+  for (const p of proposals) {
+    const org = proposalOrg(p);
+    if (!groups.has(org)) groups.set(org, []);
+    groups.get(org)!.push(p);
+  }
+  return Array.from(groups, ([org, items]) => ({ org, items }));
 }
 
 function StatTile({
@@ -52,6 +69,7 @@ export function DashboardPage() {
   const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [loading, setLoading] = useState(true);
   const [decidingId, setDecidingId] = useState<string | null>(null);
+  const [busyGroup, setBusyGroup] = useState<string | null>(null);
 
   const pollRef = useRef<number | null>(null);
 
@@ -115,6 +133,25 @@ export function DashboardPage() {
     } finally {
       setDecidingId(null);
     }
+  };
+
+  const handleGroup = async (org: string, items: ProposalRead[], action: "accept" | "dismiss") => {
+    setBusyGroup(org);
+    let ok = 0;
+    let failed = 0;
+    for (const p of items) {
+      try {
+        await (action === "accept" ? proposalsClient.accept(p.id) : proposalsClient.dismiss(p.id));
+        ok += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+    const verb = action === "accept" ? "aceita(s)" : "dispensada(s)";
+    if (failed) message.warning(`${ok} ${verb}, ${failed} falharam`);
+    else message.success(`${ok} ${verb}`);
+    await fetchBriefing(true);
+    setBusyGroup(null);
   };
 
   if (loading && !briefing) {
@@ -182,36 +219,76 @@ export function DashboardPage() {
       <DataCard>
         <h3 className="text-sm font-semibold text-text-primary mb-3">Propostas</h3>
         {briefing && briefing.proposals.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            {briefing.proposals.map((proposal) => (
-              <div
-                key={proposal.id}
-                className="flex items-center justify-between gap-3 border border-border-subtle rounded-lg px-3 py-2"
-              >
-                <div className="flex flex-col min-w-0">
-                  <span className="truncate">{proposal.title}</span>
-                  {proposal.description && (
-                    <span className="text-text-muted text-xs truncate">{proposal.description}</span>
-                  )}
+          <div className="flex flex-col gap-4">
+            {groupProposalsByOrg(briefing.proposals).map(({ org, items }) => (
+              <div key={org}>
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div className="flex items-baseline gap-2">
+                    <h4 className="text-sm font-semibold text-text-primary m-0">{org}</h4>
+                    <span className="text-xs text-text-muted">{items.length}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Popconfirm
+                      title={`Dispensar as ${items.length} propostas de ${org}?`}
+                      okText="Dispensar todas"
+                      cancelText="Cancelar"
+                      onConfirm={() => handleGroup(org, items, "dismiss")}
+                    >
+                      <Button type="text" size="small" disabled={busyGroup === org}>
+                        Dispensar todas
+                      </Button>
+                    </Popconfirm>
+                    <Popconfirm
+                      title={`Aceitar as ${items.length} propostas de ${org}?`}
+                      description="Isso inicia uma execução por proposta."
+                      okText="Aceitar todas"
+                      cancelText="Cancelar"
+                      onConfirm={() => handleGroup(org, items, "accept")}
+                    >
+                      <Button
+                        type="text"
+                        size="small"
+                        className="text-brand-primary"
+                        loading={busyGroup === org}
+                      >
+                        Aceitar todas
+                      </Button>
+                    </Popconfirm>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    size="small"
-                    icon={<CloseOutlined />}
-                    onClick={() => handleDismiss(proposal.id)}
-                    loading={decidingId === proposal.id}
-                  >
-                    Dispensar
-                  </Button>
-                  <Button
-                    type="primary"
-                    size="small"
-                    icon={<CheckOutlined />}
-                    onClick={() => handleAccept(proposal.id)}
-                    loading={decidingId === proposal.id}
-                  >
-                    Aceitar
-                  </Button>
+                <div className="flex flex-col gap-2">
+                  {items.map((proposal) => (
+                    <div
+                      key={proposal.id}
+                      className="flex items-center justify-between gap-3 border border-border-subtle rounded-lg px-3 py-2"
+                    >
+                      <div className="flex flex-col min-w-0">
+                        <span className="truncate">{proposal.title}</span>
+                        {proposal.description && (
+                          <span className="text-text-muted text-xs truncate">{proposal.description}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                          size="small"
+                          icon={<CloseOutlined />}
+                          onClick={() => handleDismiss(proposal.id)}
+                          loading={decidingId === proposal.id}
+                        >
+                          Dispensar
+                        </Button>
+                        <Button
+                          type="primary"
+                          size="small"
+                          icon={<CheckOutlined />}
+                          onClick={() => handleAccept(proposal.id)}
+                          loading={decidingId === proposal.id}
+                        >
+                          Aceitar
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}

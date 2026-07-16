@@ -6,7 +6,9 @@ de ticket, colar link de PR, clicar Play. As Automations são o embrião do
 proativo, mas ainda são "agendar uma skill num horário" — não reagem ao mundo
 e o resultado morre no banco até eu abrir a página certa.
 
-> **Status:** documento de arquitetura (v0). Nada implementado ainda.
+> **Status:** Fase 1 (briefing + ledger + watchdog) entregue. Fase 2 com o
+> framework de watchers pronto e o W1 (`github_review_requested`) rodando com
+> auto-publish + gates inteligentes (ver §6.2). Faltam W2, W3 e a Fase 3 (Slack).
 > **Objetivo máximo:** devolver tempo. A plataforma detecta, prepara, e eu só aprovo.
 
 ---
@@ -220,9 +222,18 @@ fonte única.
 
 **W1 — `github_review_requested`** (PRs esperando minha review)
 `gh search prs --review-requested=@me --state=open` no escopo da org. PR novo →
-cria `code_review_run` que roda `review_draft` e **pausa antes de
-`post_review`** (gate que já existe). No briefing/Slack: "Revisei o PR #142,
-review pronta pra publicar."
+cria `code_review_run` (com `auto_publish=true` por default; desligável por
+watcher). O runner roda `review_draft` e, em vez de sempre pausar, **publica
+sozinho** conforme a ação decidida:
+- `comment` / `request_changes` → posta direto (nunca "abençoam" o PR);
+- `approve` → só posta se a checagem determinística (`gh pr view` →
+  `state == OPEN` e `reviewDecision != CHANGES_REQUESTED`) confirmar que é
+  seguro; senão **pausa em `awaiting_approval`** pra eu decidir.
+
+**Gate secundário (freshness):** antes de qualquer `post_review`, o runner
+re-checa o estado do PR — se fechou/mergeou desde que o run nasceu, **descarta**
+a review (step `skipped`, run `done`) e registra no briefing, em vez de comentar
+num PR morto. Vale pros runs manuais também.
 
 **W2 — `github_reviews_received`** (feedback nos meus PRs)
 Para meus PRs abertos (`gh pr list --author @me`), detecta reviews/comments
@@ -240,7 +251,8 @@ Aceitar dispara a skill via runner por ticket.
 
 | Ação | Preparar | Publicar |
 |---|---|---|
-| Review de PR alheio (W1) | ✅ auto | ⏸ gate |
+| Review de PR alheio (W1) — comment / request_changes | ✅ auto | ✅ auto |
+| Review de PR alheio (W1) — approve | ✅ auto | ✅ auto se seguro / ⏸ gate se risco |
 | Fixes + replies nos meus PRs (W2) | ✅ auto | ⏸ gate (2 gates existentes) |
 | Enrich de ticket (W3) | — | ⏸ proposal antes até de preparar |
 | Automations atuais | ✅ auto | ✅ auto (comportamento atual, sem mudança) |

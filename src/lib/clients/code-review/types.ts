@@ -57,10 +57,12 @@ export interface ReviewRun {
   pr_url: string
   pr_number: string | null
   repo_name: string | null
+  pr_author: string | null
   ticket_key: string | null
   instructions?: string | null
   claude_model?: string | null
   status: RunStatus
+  auto_publish: boolean
   review_action: ReviewAction | null
   review_plan: ReviewPlan | null
   error?: string | null

@@ -519,6 +519,11 @@ export function ReviewCard({
   // PR number display
   const prLabel = run.pr_number ? `#${run.pr_number}` : null;
 
+  // Repo "owner/name": prefer the stored repo_name, else parse it off the PR
+  // URL (works for GitHub /pull/ and Bitbucket /pull-requests/).
+  const repoFromUrl = run.pr_url.match(/https?:\/\/[^/]+\/([^/]+\/[^/]+)\/(?:pull|pull-requests)\b/)?.[1];
+  const repoLabel = run.repo_name ?? repoFromUrl ?? null;
+
   return (
     <div className="bg-bg-card border border-border-subtle rounded-xl shadow-card overflow-hidden">
       {/* Header */}
@@ -546,8 +551,16 @@ export function ReviewCard({
               · {doneCount}/{run.steps.length} steps · created {formatRelative(run.created_at)}
             </span>
           </div>
-          {run.repo_name && (
-            <p className="text-xs text-text-muted m-0 mt-1 font-mono">{run.repo_name}</p>
+          {(repoLabel || run.pr_author) && (
+            <p className="text-xs text-text-secondary m-0 mt-1 flex items-center gap-1.5 flex-wrap">
+              {repoLabel && <span className="font-mono text-text-primary">{repoLabel}</span>}
+              {repoLabel && run.pr_author && <span className="text-text-muted">·</span>}
+              {run.pr_author && (
+                <span className="text-text-muted">
+                  aberto por <span className="text-text-secondary font-medium">@{run.pr_author}</span>
+                </span>
+              )}
+            </p>
           )}
           {run.ticket_key && (
             <p className="text-xs text-text-secondary m-0 mt-1">Ticket: {run.ticket_key}</p>

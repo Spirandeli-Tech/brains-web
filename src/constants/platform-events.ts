@@ -4,5 +4,6 @@ export const SOURCE_LABELS: Record<string, string> = {
   address_pr: "Address PR",
   automation: "Automação",
   watcher: "Watcher",
+  planner: "Planejadora",
   system: "Sistema",
 }
