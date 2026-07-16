@@ -6,4 +6,5 @@ export { InvoicesPage } from './Invoices'
 export { AutomationsPage } from './Automations'
 export { WatchersPage } from './Watchers'
 export { InsightsPage } from './Insights'
+export { RunnerPage } from './Runner'
 
