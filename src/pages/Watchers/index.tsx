@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, Empty, Spin, Switch, Tag, Tooltip, message } from "antd";
-import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  ThunderboltOutlined,
+} from "@ant-design/icons";
 import watchersClient from "@/lib/clients/watchers";
 import type { Watcher } from "@/lib/clients/watchers";
 import { PageHeader, DataCard } from "@/components/molecules";
@@ -8,6 +14,7 @@ import { WatcherFormModal } from "./WatcherFormModal";
 
 const KIND_LABELS: Record<string, string> = {
   github_review_requested: "PRs aguardando sua review",
+  bitbucket_review_requested: "PRs aguardando sua review (Bitbucket)",
   github_reviews_received: "Feedback nos seus PRs",
   jira_backlog_assigned: "Tickets no backlog (fora da sprint)",
 };
@@ -54,16 +61,20 @@ function WatcherCard({
   onToggle,
   onEdit,
   onDelete,
+  onRunNow,
   toggling,
   deleting,
+  running,
 }: {
   watcher: Watcher;
   now: number;
   onToggle: (id: string, enabled: boolean) => void;
   onEdit: (watcher: Watcher) => void;
   onDelete: (id: string) => void;
+  onRunNow: (id: string) => void;
   toggling: string | null;
   deleting: string | null;
+  running: string | null;
 }) {
   // last_run_at doubles as the claim lease (watcher_service.claim_next_watcher)
   // — null means it's never run yet, so it's already due.
@@ -106,6 +117,15 @@ function WatcherCard({
           onChange={(checked) => onToggle(watcher.id, checked)}
           size="small"
         />
+        <Tooltip title={watcher.enabled ? "Rodar agora" : "Habilite o watcher para rodar"}>
+          <Button
+            icon={<ThunderboltOutlined />}
+            size="small"
+            loading={running === watcher.id}
+            disabled={!watcher.enabled}
+            onClick={() => onRunNow(watcher.id)}
+          />
+        </Tooltip>
         <Button icon={<EditOutlined />} size="small" onClick={() => onEdit(watcher)} />
         <Button
           icon={<DeleteOutlined />}
@@ -126,6 +146,7 @@ export function WatchersPage() {
   const [editingWatcher, setEditingWatcher] = useState<Watcher | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [running, setRunning] = useState<string | null>(null);
 
   const now = useNow(1000);
   const pollRef = useRef<number | null>(null);
@@ -169,6 +190,19 @@ export function WatchersPage() {
       message.error(error instanceof Error ? error.message : "Failed to update watcher");
     } finally {
       setToggling(null);
+    }
+  };
+
+  const handleRunNow = async (id: string) => {
+    setRunning(id);
+    try {
+      await watchersClient.runNow(id);
+      message.success("Watcher na fila — roda no próximo tick (poucos segundos)");
+      await fetchWatchers(true);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "Failed to run watcher");
+    } finally {
+      setRunning(null);
     }
   };
 
@@ -217,8 +251,10 @@ export function WatchersPage() {
                 onToggle={handleToggle}
                 onEdit={setEditingWatcher}
                 onDelete={handleDelete}
+                onRunNow={handleRunNow}
                 toggling={toggling}
                 deleting={deleting}
+                running={running}
               />
             ))}
           </div>

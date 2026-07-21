@@ -23,4 +23,8 @@ export class WatchersClient {
   async deleteWatcher(id: string): Promise<void> {
     return this.client.delete<void>(`/watchers/${id}`)
   }
+
+  async runNow(id: string): Promise<Watcher> {
+    return this.client.post<Watcher>(`/watchers/${id}/run-now`, {}, true)
+  }
 }
