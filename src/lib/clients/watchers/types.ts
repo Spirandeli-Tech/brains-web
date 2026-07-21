@@ -1,5 +1,6 @@
 export type WatcherKind =
   | 'github_review_requested'
+  | 'bitbucket_review_requested'
   | 'github_reviews_received'
   | 'jira_backlog_assigned'
 export type WatcherStatus = 'ok' | 'error'

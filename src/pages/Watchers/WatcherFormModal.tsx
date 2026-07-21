@@ -13,15 +13,33 @@ interface WatcherFormModalProps {
 }
 
 const KIND_OPTIONS = [
-  { label: "PRs aguardando minha review", value: "github_review_requested" },
+  { label: "PRs aguardando minha review (GitHub)", value: "github_review_requested" },
+  { label: "PRs aguardando minha review (Bitbucket)", value: "bitbucket_review_requested" },
   { label: "Feedback nos meus PRs", value: "github_reviews_received" },
   { label: "Tickets no backlog (fora da sprint)", value: "jira_backlog_assigned" },
 ];
 
 const DEFAULT_INTERVAL: Record<string, number> = {
   github_review_requested: 10,
+  bitbucket_review_requested: 10,
   github_reviews_received: 10,
   jira_backlog_assigned: 30,
+};
+
+// Which connection provider each kind drives. undefined = any provider (Jira
+// backlog hits Jira, which every org has).
+const PROVIDER_FOR_KIND: Record<string, "github" | "bitbucket" | undefined> = {
+  github_review_requested: "github",
+  bitbucket_review_requested: "bitbucket",
+  github_reviews_received: "github",
+  jira_backlog_assigned: undefined,
+};
+
+// review-requested watchers (either host) auto-publish by default only for
+// GitHub; the Bitbucket one ships gated (para pra aprovar) until it's proven.
+const DEFAULT_AUTO_PUBLISH: Record<string, boolean> = {
+  github_review_requested: true,
+  bitbucket_review_requested: false,
 };
 
 export function WatcherFormModal({ open, watcher, onClose, onSaved }: WatcherFormModalProps) {
@@ -33,22 +51,26 @@ export function WatcherFormModal({ open, watcher, onClose, onSaved }: WatcherFor
   const [saving, setSaving] = useState(false);
 
   const isEdit = !!watcher;
-  // github_review_requested is the only kind with an auto-publish choice
-  // (comment/request_changes/approve can post unattended); the others always gate.
-  const isReviewRequested = kind === "github_review_requested";
-  // Both GitHub watchers drive `gh` against a GitHub connection; the backlog
-  // watcher hits Jira (any org), so it can use every connection.
-  const isGithub = kind === "github_review_requested" || kind === "github_reviews_received";
+  // The review-requested watchers (GitHub or Bitbucket) are the ones with an
+  // auto-publish choice (comment/request_changes/approve can post unattended);
+  // the others always gate.
+  const isReviewRequested =
+    kind === "github_review_requested" || kind === "bitbucket_review_requested";
+  // Each review watcher drives its own host against a matching connection; the
+  // backlog watcher hits Jira (any org), so it can use every connection.
+  const wantedProvider = PROVIDER_FOR_KIND[kind];
 
   useEffect(() => {
     if (!open) return;
     productivityClient
       .listConnections()
       .then((list) =>
-        setConnections(isGithub ? list.filter((c) => c.provider === "github") : list),
+        setConnections(
+          wantedProvider ? list.filter((c) => c.provider === wantedProvider) : list,
+        ),
       )
       .catch(() => {});
-  }, [open, isGithub]);
+  }, [open, wantedProvider]);
 
   useEffect(() => {
     if (!open) return;
@@ -56,13 +78,16 @@ export function WatcherFormModal({ open, watcher, onClose, onSaved }: WatcherFor
     setKind(k);
     setConnectionId(watcher?.connection_id ?? "");
     setIntervalMinutes(watcher?.interval_minutes ?? DEFAULT_INTERVAL[k] ?? 10);
-    setAutoPublish((watcher?.config?.auto_publish as boolean | undefined) ?? true);
+    setAutoPublish(
+      (watcher?.config?.auto_publish as boolean | undefined) ?? DEFAULT_AUTO_PUBLISH[k] ?? true,
+    );
   }, [open, watcher]);
 
   const handleKindChange = (k: string) => {
     setKind(k);
     setConnectionId("");
     setIntervalMinutes(DEFAULT_INTERVAL[k] ?? 10);
+    setAutoPublish(DEFAULT_AUTO_PUBLISH[k] ?? true);
   };
 
   const canSave = !!connectionId && intervalMinutes >= 1;
@@ -131,9 +156,11 @@ export function WatcherFormModal({ open, watcher, onClose, onSaved }: WatcherFor
           <span className="text-xs text-text-muted">
             {kind === "github_review_requested"
               ? "PRs onde você é reviewer requisitado nessa org viram review automaticamente."
-              : kind === "github_reviews_received"
-                ? "Feedback novo nos seus PRs abertos dessa org vira um run que prepara os fixes e para pra você aprovar antes de commitar/responder."
-                : "Tickets atribuídos a você que estão no backlog (fora de qualquer sprint) viram propostas."}
+              : kind === "bitbucket_review_requested"
+                ? "PRs do Bitbucket onde você é reviewer e que miram o branch development viram review automaticamente (os PRs irmãos de qa/staging/uat/master, com o mesmo código, são ignorados)."
+                : kind === "github_reviews_received"
+                  ? "Feedback novo nos seus PRs abertos dessa org vira um run que prepara os fixes e para pra você aprovar antes de commitar/responder."
+                  : "Tickets atribuídos a você que estão no backlog (fora de qualquer sprint) viram propostas."}
           </span>
         </div>
 
