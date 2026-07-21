@@ -9,7 +9,13 @@ import {
   ThunderboltOutlined,
 } from "@ant-design/icons";
 import runnerClient from "@/lib/clients/runner";
-import type { QueueItem, RunKind, RunnerOverview, RunnerStatus } from "@/lib/clients/runner";
+import type {
+  QueueItem,
+  RecentRun,
+  RunKind,
+  RunnerOverview,
+  RunnerStatus,
+} from "@/lib/clients/runner";
 import { PageHeader, DataCard } from "@/components/molecules";
 import {
   KIND_COLOR,
@@ -17,8 +23,11 @@ import {
   RUNNER_POLL_INTERVAL_MS,
   STATUS_COLOR,
   STATUS_LABEL,
+  TERMINAL_STATUS_COLOR,
+  TERMINAL_STATUS_LABEL,
   dueLabel,
   elapsedSince,
+  formatDuration,
   relative,
 } from "./utils";
 
@@ -131,6 +140,45 @@ function QueueRow({ item, position }: { item: QueueItem; position: number }) {
   );
 }
 
+function RecentRow({ item }: { item: RecentRun }) {
+  return (
+    <div className="flex items-center gap-3 py-2.5 px-1 border-b border-border-subtle last:border-b-0">
+      <span className="shrink-0">
+        <KindTag kind={item.kind} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-medium text-text-primary truncate">
+          {item.title}
+        </div>
+        <div className="text-xs text-text-muted truncate">
+          {[item.connection_name, item.subtitle].filter(Boolean).join(" · ") || "—"}
+        </div>
+      </div>
+      <span className="shrink-0 text-right">
+        <Tag color={TERMINAL_STATUS_COLOR[item.status]}>
+          {TERMINAL_STATUS_LABEL[item.status]}
+        </Tag>
+        <div className="text-xs text-text-muted mt-0.5">
+          {item.status === "failed" && item.error ? (
+            <Tooltip title={item.error}>
+              <span className="text-red-500">
+                {relative(item.finished_at)} · ver erro
+              </span>
+            </Tooltip>
+          ) : (
+            [
+              relative(item.finished_at),
+              item.duration_seconds != null ? `em ${formatDuration(item.duration_seconds)}` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")
+          )}
+        </div>
+      </span>
+    </div>
+  );
+}
+
 export function RunnerPage() {
   const [overview, setOverview] = useState<RunnerOverview | null>(null);
   const [loading, setLoading] = useState(true);
@@ -162,6 +210,7 @@ export function RunnerPage() {
 
   const current = overview?.current ?? [];
   const queued = overview?.queued ?? [];
+  const recent = overview?.recent ?? [];
   const runners = overview?.runners ?? [];
   const anyOnline = runners.some((r) => r.online);
 
@@ -241,6 +290,27 @@ export function RunnerPage() {
                       item={item}
                       position={i + 1}
                     />
+                  ))}
+                </div>
+              )}
+            </DataCard>
+          </section>
+
+          {/* Recent finished runs */}
+          <section>
+            <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-2">
+              Últimas execuções
+            </h2>
+            <DataCard>
+              {recent.length === 0 ? (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description="Nenhuma execução concluída ainda"
+                />
+              ) : (
+                <div className="flex flex-col">
+                  {recent.map((item) => (
+                    <RecentRow key={`${item.kind}-${item.id}`} item={item} />
                   ))}
                 </div>
               )}

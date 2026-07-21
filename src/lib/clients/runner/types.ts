@@ -35,9 +35,24 @@ export interface QueueItem {
   error: string | null
 }
 
+export type TerminalStatus = 'done' | 'failed' | 'cancelled'
+
+export interface RecentRun {
+  kind: RunKind
+  id: string
+  title: string
+  subtitle: string | null
+  connection_name: string | null
+  status: TerminalStatus
+  finished_at: string | null
+  duration_seconds: number | null
+  error: string | null
+}
+
 export interface RunnerOverview {
   now: string
   runners: RunnerStatus[]
   current: QueueItem[]
   queued: QueueItem[]
+  recent: RecentRun[]
 }

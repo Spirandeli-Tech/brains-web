@@ -161,7 +161,10 @@ export function NotificationBell() {
         )}
       </div>
 
-      <div className="flex items-center gap-6 px-6 border-b border-border-divider">
+      {/* Tabs scroll horizontally when they outgrow the popover width, instead
+          of spilling past its edge. Scrollbar hidden for cleanliness — the
+          partially-clipped last tab is the affordance that there's more. */}
+      <div className="flex items-center gap-6 px-6 border-b border-border-divider overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map((key) => {
           const active = tab === key;
           const count = unreadCountFor(key);
@@ -169,7 +172,7 @@ export function NotificationBell() {
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`relative flex items-center gap-1.5 py-3 text-sm border-none bg-transparent cursor-pointer whitespace-nowrap transition-colors duration-150 focus-visible:outline-none ${
+              className={`relative flex shrink-0 items-center gap-1.5 py-3 text-sm border-none bg-transparent cursor-pointer whitespace-nowrap transition-colors duration-150 focus-visible:outline-none ${
                 active ? "text-brand-primary font-medium" : "text-text-muted hover:text-text-secondary"
               }`}
             >
@@ -182,7 +185,7 @@ export function NotificationBell() {
                 />
               )}
               {active && (
-                <span className="absolute left-0 right-0 -bottom-px h-[2.5px] bg-brand-primary rounded-full" />
+                <span className="absolute left-0 right-0 bottom-0 h-[2.5px] bg-brand-primary rounded-full" />
               )}
             </button>
           );

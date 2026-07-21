@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
-import type { QueueDisplayStatus, RunKind } from "@/lib/clients/runner";
+import type { QueueDisplayStatus, RunKind, TerminalStatus } from "@/lib/clients/runner";
 
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
@@ -37,6 +37,30 @@ export const STATUS_COLOR: Record<QueueDisplayStatus, string> = {
   waiting: "warning",
   awaiting_approval: "gold",
 };
+
+export const TERMINAL_STATUS_LABEL: Record<TerminalStatus, string> = {
+  done: "Concluído",
+  failed: "Falhou",
+  cancelled: "Cancelado",
+};
+
+export const TERMINAL_STATUS_COLOR: Record<TerminalStatus, string> = {
+  done: "success",
+  failed: "error",
+  cancelled: "default",
+};
+
+/** Compact duration like "7m 12s" from a number of seconds. */
+export function formatDuration(seconds: number | null): string {
+  if (seconds == null) return "—";
+  const secs = Math.max(0, Math.round(seconds));
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
 
 /** API datetimes are naive UTC — parse them as UTC before comparing to now. */
 export function fromUtc(iso: string): dayjs.Dayjs {
