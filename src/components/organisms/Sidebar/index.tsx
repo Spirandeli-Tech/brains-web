@@ -6,12 +6,34 @@ import type { NavOption } from "@/constants/navigation";
 import { Logo } from "@/components/atoms";
 import { useAuth } from "@/context/auth";
 
+function matchesPath(pathname: string, path: string) {
+  return pathname === path || pathname.startsWith(`${path}/`);
+}
+
+/** The selected item is the **longest** nav path the URL matches.
+ *
+ * Exact comparison alone left detail routes with nothing highlighted
+ * (`/content/videos/<uuid>`, `/automations/<id>`), and naive prefix matching
+ * would light up Transactions (`/finance`) while you are on Categories
+ * (`/finance/categories`). Longest-match handles both. */
+function useActivePath(pathname: string) {
+  return useMemo(() => {
+    const candidates = NAV_OPTIONS.flatMap((item) =>
+      item.children ? item.children.map((child) => child.path) : [item.path],
+    );
+    const matching = candidates.filter((path) => matchesPath(pathname, path));
+    if (!matching.length) return null;
+    return matching.reduce((longest, path) => (path.length > longest.length ? path : longest));
+  }, [pathname]);
+}
+
 export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const isAdmin = user?.role === "ADMIN";
+  const activePath = useActivePath(location.pathname);
 
   const visibleOptions = useMemo(
     () => NAV_OPTIONS.filter((item) => !item.adminOnly || isAdmin),
@@ -19,19 +41,19 @@ export function Sidebar() {
   );
   const [expandedGroup, setExpandedGroup] = useState<string | null>(() => {
     const match = NAV_OPTIONS.find((item) =>
-      item.children?.some((child) => location.pathname === child.path),
+      item.children?.some((child) => matchesPath(location.pathname, child.path)),
     );
     return match?.path ?? null;
   });
 
   const isChildActive = (item: NavOption) => {
     if (!item.children) return false;
-    return item.children.some((child) => location.pathname === child.path);
+    return item.children.some((child) => child.path === activePath);
   };
 
   const isActive = (item: NavOption) => {
     if (item.children) return isChildActive(item);
-    return location.pathname === item.path;
+    return item.path === activePath;
   };
 
   const handleNavClick = (item: NavOption) => {
@@ -58,6 +80,9 @@ export function Sidebar() {
 
           return (
             <div key={item.path}>
+              {item.divider && (
+                <div className="h-px bg-border-divider my-2 mx-3" role="separator" />
+              )}
               <button
                 onClick={() => handleNavClick(item)}
                 className={`flex items-center gap-3 w-full h-10 px-3 rounded-[10px] text-sm font-medium transition-colors cursor-pointer border-none
@@ -84,7 +109,7 @@ export function Sidebar() {
               {hasChildren && isExpanded && (
                 <div className="flex flex-col gap-0.5 mt-0.5 ml-4 pl-4 border-l border-border-divider">
                   {item.children!.map((child) => {
-                    const childActive = location.pathname === child.path;
+                    const childActive = child.path === activePath;
                     return (
                       <button
                         key={child.path}
