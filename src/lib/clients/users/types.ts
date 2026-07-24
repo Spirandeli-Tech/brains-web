@@ -28,4 +28,7 @@ export interface IUsersClient {
   updateMe(data: UpdateProfilePayload): Promise<UserData>
   getPreferences(): Promise<UserPreferencesData>
   updatePreferences(data: UpdatePreferencesPayload): Promise<UserPreferencesData>
+  /** Soft delete — the row and everything it owns stay; it just stops being
+   * listed and can no longer authenticate. Reversible in the database. */
+  deleteUser(id: string): Promise<void>
 }

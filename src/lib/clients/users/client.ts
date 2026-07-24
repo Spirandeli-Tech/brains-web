@@ -18,6 +18,10 @@ export class UsersClient implements IUsersClient {
     return this.client.get<UserData[]>('/users')
   }
 
+  async deleteUser(id: string): Promise<void> {
+    return this.client.delete<void>(`/users/${id}`)
+  }
+
   async getMe(): Promise<UserData> {
     return this.client.get<UserData>('/users/me')
   }
