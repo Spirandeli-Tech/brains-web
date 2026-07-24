@@ -1,6 +1,9 @@
 export type IdeaStatus = 'idea' | 'review' | 'promoted' | 'discarded'
 export type VideoStatus = 'idea' | 'script_ready' | 'recorded' | 'edited' | 'published'
-export type ContentFormat = 'short' | 'video' | 'message' | 'series'
+/** `episode` is the product (8–15min, Sunday); `short` and `podcast` derive from
+ * it. `message` and `series` only ever apply to an idea, never to a video. */
+export type ContentFormat = 'episode' | 'short' | 'podcast' | 'message' | 'series'
+export type VideoFormat = 'episode' | 'short' | 'podcast'
 
 export interface Idea {
   id: string
@@ -74,6 +77,8 @@ export interface Video {
   id: string
   idea_id: string | null
   idea_title: string | null
+  /** Set on cuts and podcasts: the episode they were cut from. */
+  parent_id: string | null
   title: string
   slug: string | null
   keyword: string | null
@@ -88,12 +93,35 @@ export interface Video {
   retention_48h: string | null
   learning: string | null
   script_count: number
+  derivative_count: number
   created_at: string
   updated_at: string
 }
 
 export interface VideoDetail extends Video {
   scripts: VideoScript[]
+  derivatives: Video[]
+}
+
+export interface CreateDerivativePayload {
+  format: VideoFormat
+  title?: string | null
+  keyword?: string | null
+  publish_date?: string | null
+  status?: VideoStatus
+}
+
+export interface CadenceWeek {
+  week_number: number
+  starts_on: string
+  ends_on: string
+  is_current: boolean
+  counts: Record<string, number>
+  target: Record<string, number>
+  missing: Record<string, number>
+  state: 'empty' | 'partial' | 'complete'
+  series: string[]
+  video_ids: string[]
 }
 
 export interface CreateVideoPayload {

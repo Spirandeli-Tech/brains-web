@@ -84,7 +84,7 @@ export function VideoFormModal({ open, video, onClose, onSuccess }: Props) {
       width={640}
       destroyOnHidden
     >
-      <Form form={form} layout="vertical" initialValues={{ format: "short", status: "idea" }}>
+      <Form form={form} layout="vertical" initialValues={{ format: "episode", status: "idea" }}>
         <Form.Item
           name="title"
           label="Title"
@@ -111,8 +111,9 @@ export function VideoFormModal({ open, video, onClose, onSuccess }: Props) {
           <Form.Item name="format" label="Format">
             <Select
               options={[
-                { value: "short", label: "Short (30–60s, entry point)" },
-                { value: "video", label: "Video (60–180s, depth)" },
+                { value: "episode", label: "Episode (8–15min, Sunday — the product)" },
+                { value: "short", label: "Cut (Tue/Fri — discovery)" },
+                { value: "podcast", label: "Podcast (audio track, Sunday)" },
               ]}
             />
           </Form.Item>

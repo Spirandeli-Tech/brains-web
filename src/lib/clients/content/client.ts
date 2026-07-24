@@ -1,5 +1,7 @@
 import { ApiClient } from '../api-client'
 import type {
+  CadenceWeek,
+  CreateDerivativePayload,
   CreateIdeaPayload,
   CreateScriptPayload,
   CreateVideoPayload,
@@ -46,9 +48,25 @@ export class ContentClient {
 
   // --- Videos ---
 
-  async listVideos(statusFilter?: string): Promise<Video[]> {
-    const qs = statusFilter ? `?status_filter=${encodeURIComponent(statusFilter)}` : ''
+  async listVideos(statusFilter?: string, formatFilter?: string): Promise<Video[]> {
+    const params = new URLSearchParams()
+    if (statusFilter) params.set('status_filter', statusFilter)
+    if (formatFilter) params.set('format_filter', formatFilter)
+    const qs = params.toString() ? `?${params.toString()}` : ''
     return this.client.get<Video[]>(`/content/videos${qs}`)
+  }
+
+  /** Scheduled versus planned, week by week. The gaps are the point. */
+  async getCadence(weeks = 6): Promise<CadenceWeek[]> {
+    return this.client.get<CadenceWeek[]>(`/content/cadence?weeks=${weeks}`)
+  }
+
+  async listDerivatives(videoId: string): Promise<Video[]> {
+    return this.client.get<Video[]>(`/content/videos/${videoId}/derivatives`)
+  }
+
+  async createDerivative(videoId: string, payload: CreateDerivativePayload): Promise<Video> {
+    return this.client.post<Video>(`/content/videos/${videoId}/derivatives`, payload, true)
   }
 
   async getVideo(id: string): Promise<VideoDetail> {

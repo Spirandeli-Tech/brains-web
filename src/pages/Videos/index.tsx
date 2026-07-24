@@ -14,11 +14,14 @@ import contentClient from "@/lib/clients/content";
 import type { Video } from "@/lib/clients/content";
 import { PageHeader, DataCard } from "@/components/molecules";
 import {
+  FORMAT_COLOR,
   FORMAT_LABEL,
+  VIDEO_FORMATS,
   VIDEO_STATUSES,
   VIDEO_STATUS_COLOR,
   VIDEO_STATUS_LABEL,
 } from "./constants";
+import { CadenceStrip } from "./CadenceStrip";
 import { VideoFormModal } from "./VideoFormModal";
 
 export function VideosPage() {
@@ -26,19 +29,23 @@ export function VideosPage() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
+  const [formatFilter, setFormatFilter] = useState<string | undefined>();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Video | null>(null);
+  // Bumped on every reload so the strip recounts without owning the fetch.
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setVideos(await contentClient.listVideos(statusFilter));
+      setVideos(await contentClient.listVideos(statusFilter, formatFilter));
+      setRefreshKey((key) => key + 1);
     } catch (error) {
       message.error(error instanceof Error ? error.message : "Failed to load videos");
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, formatFilter]);
 
   useEffect(() => {
     void load();
@@ -113,10 +120,25 @@ export function VideosPage() {
     },
     {
       title: "Format",
-      dataIndex: "format",
       key: "format",
-      width: 90,
-      render: (format: string) => FORMAT_LABEL[format] ?? format,
+      width: 130,
+      render: (_, record) => (
+        <div className="flex items-center gap-1.5">
+          <Tag color={FORMAT_COLOR[record.format] ?? "default"}>
+            {FORMAT_LABEL[record.format] ?? record.format}
+          </Tag>
+          {record.format === "episode" && record.derivative_count > 0 && (
+            <Tooltip title={`${record.derivative_count} derivative(s) — cuts and podcast`}>
+              <span className="text-xs text-text-muted">+{record.derivative_count}</span>
+            </Tooltip>
+          )}
+          {record.parent_id && (
+            <Tooltip title="Derived from an episode">
+              <span className="text-xs text-text-muted">↳</span>
+            </Tooltip>
+          )}
+        </div>
+      ),
     },
     {
       title: "Status",
@@ -179,6 +201,14 @@ export function VideosPage() {
           <div className="flex items-center gap-3">
             <Select
               allowClear
+              placeholder="All formats"
+              className="w-36"
+              value={formatFilter}
+              onChange={setFormatFilter}
+              options={VIDEO_FORMATS.map((f) => ({ value: f, label: FORMAT_LABEL[f] }))}
+            />
+            <Select
+              allowClear
               placeholder="All statuses"
               className="w-44"
               value={statusFilter}
@@ -199,6 +229,7 @@ export function VideosPage() {
           </div>
         }
       />
+      <CadenceStrip refreshKey={refreshKey} />
       <DataCard>
         <Table<Video>
           columns={columns}

@@ -61,13 +61,18 @@ export function PromoteModal({ open, idea, onClose, onSuccess }: Props) {
       width={560}
       destroyOnHidden
     >
-      <Form form={form} layout="vertical" initialValues={{ format: "short" }}>
+      <Form form={form} layout="vertical" initialValues={{ format: "episode" }}>
         <div className="grid grid-cols-2 gap-4">
-          <Form.Item name="format" label="Format">
+          <Form.Item
+            name="format"
+            label="Format"
+            tooltip="The episode is the product; cuts and the podcast are created from it afterwards"
+          >
             <Select
               options={[
-                { value: "short", label: "Short (30–60s, entry point)" },
-                { value: "video", label: "Video (60–180s, depth)" },
+                { value: "episode", label: "Episode (8–15min, Sunday — the product)" },
+                { value: "short", label: "Cut (Tue/Fri — discovery)" },
+                { value: "podcast", label: "Podcast (audio track, Sunday)" },
               ]}
             />
           </Form.Item>

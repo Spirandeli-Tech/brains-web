@@ -45,11 +45,36 @@ export const IDEA_STATUS_COLOR: Record<IdeaStatus, string> = {
   discarded: "default",
 };
 
+/** The hub-and-spoke model from labs/docs/series-map.html: the long episode is
+ * the product, cuts and the podcast derive from it. */
 export const FORMAT_LABEL: Record<string, string> = {
-  short: "Short",
-  video: "Video",
+  episode: "Episode",
+  short: "Cut",
+  podcast: "Podcast",
   message: "Message",
   series: "Series",
+};
+
+export const FORMAT_HINT: Record<string, string> = {
+  episode: "8–15min, Sunday — the product. Never under 8min.",
+  short: "One of 2–3 cuts (Tue/Fri) — discovery, not revenue.",
+  podcast: "The audio track → Spotify, Sunday.",
+};
+
+export const VIDEO_FORMATS = ["episode", "short", "podcast"];
+
+export const FORMAT_COLOR: Record<string, string> = {
+  episode: "purple",
+  short: "cyan",
+  podcast: "gold",
+};
+
+/** Weekly plan: 1 episode + 2 cuts (3 is ideal) + 1 podcast. Mirrors
+ * WEEKLY_TARGET in the API — kept here only for labels, never for maths. */
+export const CADENCE_STATE_COLOR: Record<string, string> = {
+  empty: "#dc2626",
+  partial: "#f59e0b",
+  complete: "#16a34a",
 };
 
 export const IDEA_TYPES = [

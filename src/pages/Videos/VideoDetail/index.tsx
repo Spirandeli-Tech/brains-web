@@ -27,6 +27,8 @@ import contentClient from "@/lib/clients/content";
 import type { VideoDetail, VideoScript, VideoStatus } from "@/lib/clients/content";
 import { PageHeader, DataCard } from "@/components/molecules";
 import {
+  FORMAT_COLOR,
+  FORMAT_HINT,
   FORMAT_LABEL,
   VIDEO_STATUSES,
   VIDEO_STATUS_COLOR,
@@ -34,6 +36,8 @@ import {
 } from "../constants";
 import { VideoFormModal } from "../VideoFormModal";
 import { ScriptFormModal } from "./ScriptFormModal";
+import { DerivativeFormModal } from "./DerivativeFormModal";
+import { MetricsFormModal } from "./MetricsFormModal";
 
 function ScriptVersion({
   script,
@@ -162,6 +166,8 @@ export function VideoDetailPage() {
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [scriptOpen, setScriptOpen] = useState(false);
+  const [derivativeOpen, setDerivativeOpen] = useState(false);
+  const [metricsOpen, setMetricsOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
 
   const load = useCallback(async () => {
@@ -229,7 +235,7 @@ export function VideoDetailPage() {
             video.publish_date
               ? dayjs(video.publish_date).format("DD/MM/YYYY")
               : "Not scheduled",
-            FORMAT_LABEL[video.format] ?? video.format,
+            FORMAT_HINT[video.format] ?? FORMAT_LABEL[video.format] ?? video.format,
             video.series
               ? `${video.series}${video.episode_number ? ` · ep. ${video.episode_number}` : ""}`
               : null,
@@ -308,11 +314,71 @@ export function VideoDetailPage() {
               </DataCard>
             ),
           },
+          ...(video.parent_id
+            ? []
+            : [
+                {
+                  key: "derivatives",
+                  label: `Derivatives${
+                    video.derivatives.length ? ` (${video.derivatives.length})` : ""
+                  }`,
+                  children: (
+                    <DataCard>
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-text-muted">
+                            The plan is 2–3 cuts (Tue/Fri) plus one podcast per episode.
+                          </span>
+                          <Button
+                            type="primary"
+                            size="small"
+                            icon={<PlusOutlined />}
+                            onClick={() => setDerivativeOpen(true)}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                        {video.derivatives.length ? (
+                          <div className="flex flex-col gap-1.5">
+                            {video.derivatives.map((item) => (
+                              <div
+                                key={item.id}
+                                className="flex items-center gap-2 border border-border-subtle rounded px-3 py-2 cursor-pointer hover:bg-bg-hover"
+                                onClick={() => navigate(`/content/videos/${item.id}`)}
+                              >
+                                <Tag color={FORMAT_COLOR[item.format] ?? "default"}>
+                                  {FORMAT_LABEL[item.format] ?? item.format}
+                                </Tag>
+                                <span className="text-sm flex-1 truncate">{item.title}</span>
+                                <span className="text-xs text-text-muted whitespace-nowrap">
+                                  {item.publish_date
+                                    ? dayjs(item.publish_date).format("DD/MM")
+                                    : "—"}
+                                </span>
+                                <Tag color={VIDEO_STATUS_COLOR[item.status]}>
+                                  {VIDEO_STATUS_LABEL[item.status]}
+                                </Tag>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <Empty description="No cuts yet — name them before recording (principle #7)" />
+                        )}
+                      </div>
+                    </DataCard>
+                  ),
+                },
+              ]),
           {
             key: "details",
             label: "Details",
             children: (
               <DataCard>
+                <div className="flex justify-end mb-3">
+                  <Button size="small" icon={<EditOutlined />} onClick={() => setMetricsOpen(true)}>
+                    Edit 48h metrics
+                  </Button>
+                </div>
                 <Descriptions column={2} size="small" bordered>
                   <Descriptions.Item label="Keyword">
                     {video.keyword || <span className="text-text-muted">—</span>}
@@ -325,6 +391,15 @@ export function VideoDetailPage() {
                       <a onClick={() => navigate("/content/ideas")}>{video.idea_title}</a>
                     ) : (
                       <span className="text-text-muted">Created directly</span>
+                    )}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Derived from">
+                    {video.parent_id ? (
+                      <a onClick={() => navigate(`/content/videos/${video.parent_id}`)}>
+                        Go to the episode
+                      </a>
+                    ) : (
+                      <span className="text-text-muted">This is the episode</span>
                     )}
                   </Descriptions.Item>
                   <Descriptions.Item label="YouTube">
@@ -371,6 +446,19 @@ export function VideoDetailPage() {
           setSelectedVersion(null);
           void load();
         }}
+      />
+      <DerivativeFormModal
+        open={derivativeOpen}
+        episodeId={video.id}
+        episodeTitle={video.title}
+        onClose={() => setDerivativeOpen(false)}
+        onSuccess={() => void load()}
+      />
+      <MetricsFormModal
+        open={metricsOpen}
+        video={video}
+        onClose={() => setMetricsOpen(false)}
+        onSuccess={() => void load()}
       />
     </div>
   );
