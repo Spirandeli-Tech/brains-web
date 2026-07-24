@@ -14,14 +14,19 @@ import contentClient from "@/lib/clients/content";
 import type { Idea } from "@/lib/clients/content";
 import { PageHeader, DataCard } from "@/components/molecules";
 import {
+  CHECK_STATE_COLOR,
+  CHECK_STATE_LABEL,
   FORMAT_LABEL,
+  GATE_COLOR,
+  GATE_HELP,
+  GATE_LABEL,
   IDEA_STATUSES,
   IDEA_STATUS_COLOR,
   IDEA_STATUS_LABEL,
   IDEA_TYPE_LABEL,
   PRIORITY_COLOR,
   PRIORITY_LABEL,
-  THEME_FILTER_LABEL,
+  scoreTone,
 } from "../Videos/constants";
 import { IdeaFormModal } from "./IdeaFormModal";
 import { PromoteModal } from "./PromoteModal";
@@ -104,28 +109,39 @@ export function IdeasPage() {
       ),
     },
     {
-      title: "Theme gate",
-      key: "theme_filter",
-      width: 110,
-      render: (_, record) => {
-        const entries = Object.entries(record.theme_filter ?? {});
-        if (!entries.length) return <span className="text-text-muted">—</span>;
-        return (
-          <Tooltip
-            title={
-              <div className="flex flex-col gap-1">
-                {entries.map(([key, value]) => (
-                  <div key={key}>
-                    <b>{THEME_FILTER_LABEL[key] ?? key}:</b> {value}
-                  </div>
-                ))}
-              </div>
-            }
-          >
-            <Tag color="cyan">{entries.length}/3</Tag>
-          </Tooltip>
-        );
-      },
+      title: "Score",
+      key: "score",
+      width: 150,
+      sorter: (a, b) => a.score - b.score,
+      render: (_, record) => (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-sm" style={{ color: scoreTone(record.score) }}>
+              {record.score}%
+            </span>
+            <Tooltip title={GATE_HELP[record.gate]}>
+              <Tag color={GATE_COLOR[record.gate]} className="!mr-0">
+                {GATE_LABEL[record.gate]}
+              </Tag>
+            </Tooltip>
+          </div>
+          {/* Uma barrinha por check, na ordem do stepper — dá pra ver ONDE
+              falhou sem abrir a ideia. */}
+          <div className="flex gap-0.5">
+            {record.checks.map((check) => (
+              <Tooltip
+                key={check.key}
+                title={`${check.label} (${check.rule}): ${CHECK_STATE_LABEL[check.state]}`}
+              >
+                <span
+                  className="w-5 h-1.5 rounded-sm"
+                  style={{ background: CHECK_STATE_COLOR[check.state] }}
+                />
+              </Tooltip>
+            ))}
+          </div>
+        </div>
+      ),
     },
     {
       title: "Status",
@@ -159,7 +175,7 @@ export function IdeasPage() {
       key: "actions",
       width: 130,
       render: (_, record) => (
-        <div className="flex gap-0.5">
+        <div className="flex gap-0.5" onClick={(event) => event.stopPropagation()}>
           <Tooltip title="Schedule — turn into a calendar row">
             <Button
               type="text"
@@ -227,6 +243,10 @@ export function IdeasPage() {
           rowKey="id"
           loading={loading}
           pagination={false}
+          onRow={(record) => ({
+            onClick: () => navigate(`/content/ideas/${record.id}`),
+            className: "cursor-pointer",
+          })}
         />
       </DataCard>
 

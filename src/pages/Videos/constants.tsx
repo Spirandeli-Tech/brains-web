@@ -109,9 +109,52 @@ export const PRIORITY_COLOR: Record<string, string> = {
   baixa: "default",
 };
 
-/** Labels for the 3-question theme gate stored in `Idea.theme_filter`. */
-export const THEME_FILTER_LABEL: Record<string, string> = {
-  demand: "#9 Demand",
-  angle: "#10 Angle",
-  immediate_value: "#11 Immediate value",
+// --- Score e gate das ideias ---
+
+/** O gate manda mais que o score. Cor comunica ação, não só estado:
+ * verde = pode promover · âmbar = risco consciente · azul = falta avaliar
+ * (diferente de reprovado! "não sei" não é "não presta") · vermelho = bloqueado. */
+export const GATE_LABEL: Record<string, string> = {
+  approved: "Aprovada",
+  at_risk: "Em risco",
+  unassessed: "Não avaliada",
+  rejected: "Bloqueada",
 };
+
+export const GATE_COLOR: Record<string, string> = {
+  approved: "green",
+  at_risk: "gold",
+  unassessed: "blue",
+  rejected: "red",
+};
+
+export const GATE_HELP: Record<string, string> = {
+  approved: "Passou todos os checks bloqueantes. Pode virar vídeo.",
+  at_risk:
+    "Nenhum bloqueante reprovado, mas algum ficou pela metade. Dá pra seguir sabendo do risco.",
+  unassessed:
+    "Falta dar veredito em algum check. Não é reprovação — é ausência de avaliação.",
+  rejected:
+    "Um check bloqueante reprovou. O filtro de tema é eliminatório no principios-video.md: sim nas três ou não grava.",
+};
+
+export const CHECK_STATE_LABEL: Record<string, string> = {
+  pass: "Passa",
+  partial: "Pela metade",
+  fail: "Reprova",
+  unknown: "Não avaliado",
+};
+
+export const CHECK_STATE_COLOR: Record<string, string> = {
+  pass: "#16a34a",
+  partial: "#f59e0b",
+  fail: "#dc2626",
+  unknown: "#94a3b8",
+};
+
+/** Faixas do score. Só rótulo — a decisão de promover é do gate. */
+export function scoreTone(score: number): string {
+  if (score >= 80) return "#16a34a";
+  if (score >= 50) return "#f59e0b";
+  return "#dc2626";
+}

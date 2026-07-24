@@ -5,6 +5,24 @@ export type VideoStatus = 'idea' | 'script_ready' | 'recorded' | 'edited' | 'pub
 export type ContentFormat = 'episode' | 'short' | 'podcast' | 'message' | 'series'
 export type VideoFormat = 'episode' | 'short' | 'podcast'
 
+export type CheckState = 'pass' | 'partial' | 'fail' | 'unknown'
+/** approved = passou tudo · at_risk = bloqueante parcial · unassessed = falta
+ * avaliar · rejected = bloqueante reprovado. O gate manda mais que o score. */
+export type IdeaGate = 'approved' | 'at_risk' | 'unassessed' | 'rejected'
+
+export interface IdeaCheck {
+  key: string
+  label: string
+  /** Qual regra do principios-video.md ou da persona este check cobra */
+  rule: string
+  blocking: boolean
+  /** `facts` é derivado de `trustworthy` — não se edita à mão */
+  derived: boolean
+  help: string
+  state: CheckState
+  note: string | null
+}
+
 export interface Idea {
   id: string
   slug: string
@@ -18,8 +36,11 @@ export interface Idea {
   visual_refs: string | null
   trustworthy: boolean
   fact_check: string | null
-  /** The 3-question theme gate (#9 demand, #10 angle, #11 immediate value). */
-  theme_filter: Record<string, string>
+  /** Calculado no servidor — a UI nunca recalcula, pra tabela e detalhe não discordarem. */
+  score: number
+  gate: IdeaGate
+  checks: IdeaCheck[]
+  blocking_failed: string[]
   source: string
   video_count: number
   created_at: string
@@ -38,7 +59,7 @@ export interface CreateIdeaPayload {
   visual_refs?: string | null
   trustworthy?: boolean
   fact_check?: string | null
-  theme_filter?: Record<string, string>
+  checks?: Record<string, { state?: CheckState; note?: string | null }>
 }
 
 export type UpdateIdeaPayload = Partial<CreateIdeaPayload>

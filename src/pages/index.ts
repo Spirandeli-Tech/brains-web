@@ -8,6 +8,7 @@ export { WatchersPage } from './Watchers'
 export { InsightsPage } from './Insights'
 export { RunnerPage } from './Runner'
 export { IdeasPage } from './Ideas'
+export { IdeaDetailPage } from './Ideas/IdeaDetail'
 export { VideosPage } from './Videos'
 export { VideoDetailPage } from './Videos/VideoDetail'
 
