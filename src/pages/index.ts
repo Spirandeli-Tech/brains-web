@@ -7,4 +7,7 @@ export { AutomationsPage } from './Automations'
 export { WatchersPage } from './Watchers'
 export { InsightsPage } from './Insights'
 export { RunnerPage } from './Runner'
+export { IdeasPage } from './Ideas'
+export { VideosPage } from './Videos'
+export { VideoDetailPage } from './Videos/VideoDetail'
 

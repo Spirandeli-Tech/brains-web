@@ -26,6 +26,9 @@ import { InsightsPage } from "@/pages/Insights";
 import { RunnerPage } from "@/pages/Runner";
 import { CodeReviewPage } from "@/pages/CodeReview";
 import { AddressPrPage } from "@/pages/AddressPr";
+import { IdeasPage } from "@/pages/Ideas";
+import { VideosPage } from "@/pages/Videos";
+import { VideoDetailPage } from "@/pages/Videos/VideoDetail";
 import { AppLayout } from "@/components/templates";
 import { theme } from "@/theme/antd-theme";
 
@@ -69,6 +72,15 @@ const router = createBrowserRouter([
         children: [
           { path: "", element: <AutomationsPage /> },
           { path: ":id", element: <AutomationDetailPage /> },
+        ],
+      },
+      {
+        path: "content",
+        children: [
+          { index: true, element: <Navigate to="/content/videos" replace /> },
+          { path: "ideas", element: <IdeasPage /> },
+          { path: "videos", element: <VideosPage /> },
+          { path: "videos/:id", element: <VideoDetailPage /> },
         ],
       },
       { path: "watchers", element: <WatchersPage /> },
