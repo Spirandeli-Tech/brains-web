@@ -30,6 +30,7 @@ import { IdeasPage } from "@/pages/Ideas";
 import { IdeaDetailPage } from "@/pages/Ideas/IdeaDetail";
 import { VideosPage } from "@/pages/Videos";
 import { VideoDetailPage } from "@/pages/Videos/VideoDetail";
+import { DevocionaisPage } from "@/pages/Devocionais";
 import { AppLayout } from "@/components/templates";
 import { theme } from "@/theme/antd-theme";
 
@@ -83,6 +84,7 @@ const router = createBrowserRouter([
           { path: "ideas/:id", element: <IdeaDetailPage /> },
           { path: "videos", element: <VideosPage /> },
           { path: "videos/:id", element: <VideoDetailPage /> },
+          { path: "devocionais", element: <DevocionaisPage /> },
         ],
       },
       { path: "watchers", element: <WatchersPage /> },

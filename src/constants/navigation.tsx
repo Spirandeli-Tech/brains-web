@@ -1,4 +1,4 @@
-import { AuditOutlined, BankOutlined, BulbOutlined, ClockCircleOutlined, CodeOutlined, CommentOutlined, CreditCardOutlined, DashboardOutlined, DollarOutlined, EyeOutlined, FileTextOutlined, PlayCircleOutlined, RobotOutlined, TagsOutlined, ThunderboltOutlined, ToolOutlined, TeamOutlined, UserOutlined, VideoCameraOutlined, WalletOutlined } from '@ant-design/icons'
+import { AuditOutlined, BankOutlined, BulbOutlined, ClockCircleOutlined, CodeOutlined, CommentOutlined, CreditCardOutlined, DashboardOutlined, DollarOutlined, EyeOutlined, FileTextOutlined, PlayCircleOutlined, ReadOutlined, RobotOutlined, TagsOutlined, ThunderboltOutlined, ToolOutlined, TeamOutlined, UserOutlined, VideoCameraOutlined, WalletOutlined } from '@ant-design/icons'
 
 export interface NavChild {
   label: string
@@ -53,6 +53,11 @@ export const NAV_OPTIONS: NavOption[] = [
         label: 'Ideas',
         icon: <BulbOutlined />,
         path: '/content/ideas',
+      },
+      {
+        label: 'Devocionais',
+        icon: <ReadOutlined />,
+        path: '/content/devocionais',
       },
     ],
   },
