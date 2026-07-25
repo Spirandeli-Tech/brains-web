@@ -142,6 +142,9 @@ export interface CadenceWeek {
   missing: Record<string, number>
   state: 'empty' | 'partial' | 'complete'
   series: string[]
+  /** Episódios da semana. `week_number` é a semana do PLANO (26 semanas, sem 1 =
+   * carga), não da série — mostrar o ep evita ler "ep1 na sem 2" como atraso. */
+  episodes: number[]
   video_ids: string[]
 }
 

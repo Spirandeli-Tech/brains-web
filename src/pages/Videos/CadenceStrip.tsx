@@ -107,7 +107,11 @@ export function CadenceStrip({ refreshKey }: { refreshKey?: number }) {
               </div>
 
               <span className="text-[10px] text-text-muted truncate">
-                {week.series.length ? week.series.join(", ") : "—"}
+                {week.episodes.length
+                  ? `ep ${week.episodes.join(", ")} · ${week.series.join(", ")}`
+                  : week.series.length
+                    ? week.series.join(", ")
+                    : "—"}
               </span>
             </div>
           );
