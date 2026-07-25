@@ -14,3 +14,15 @@ export interface Devocional {
   video_youtube_url: string | null
   video_short_youtube_url: string | null
 }
+
+export interface DevocionalDetail extends Devocional {
+  tema: string | null
+  tags: string[]
+  imagem: string | null
+  roteiro: string
+  telegram_mensagem: string | null
+  video_title: string | null
+  video_thumbnail_text: string | null
+  video_published_at: string | null
+  video_playlist_url: string | null
+}

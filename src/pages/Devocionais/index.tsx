@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button, Table, Tag, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { LinkOutlined, ReloadOutlined, YoutubeOutlined } from "@ant-design/icons";
@@ -15,6 +16,7 @@ import {
 import { ScheduleSummary } from "./ScheduleSummary";
 
 export function DevocionaisPage() {
+  const navigate = useNavigate();
   const [devocionais, setDevocionais] = useState<Devocional[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -64,7 +66,12 @@ export function DevocionaisPage() {
           </Tag>
           {record.blog_status === "published" && (
             <Tooltip title="Abrir no blog">
-              <a href={record.blog_url} target="_blank" rel="noreferrer">
+              <a
+                href={record.blog_url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(event) => event.stopPropagation()}
+              >
                 <LinkOutlined className="text-text-muted" />
               </a>
             </Tooltip>
@@ -96,7 +103,12 @@ export function DevocionaisPage() {
           </Tag>
           {record.video_youtube_url && (
             <Tooltip title="Abrir no YouTube">
-              <a href={record.video_youtube_url} target="_blank" rel="noreferrer">
+              <a
+                href={record.video_youtube_url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(event) => event.stopPropagation()}
+              >
                 <YoutubeOutlined className="text-text-muted" />
               </a>
             </Tooltip>
@@ -123,6 +135,10 @@ export function DevocionaisPage() {
           rowKey="slug"
           loading={loading}
           pagination={false}
+          onRow={(record) => ({
+            className: "cursor-pointer",
+            onClick: () => navigate(`/content/devocionais/${record.slug}`),
+          })}
         />
       </DataCard>
     </div>

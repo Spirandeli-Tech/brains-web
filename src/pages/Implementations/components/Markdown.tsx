@@ -24,8 +24,13 @@ function renderInline(text: string, key: string | number): React.ReactNode {
  * Lightweight Markdown renderer for step logs.
  * Handles: ## headings, **bold**, *italic*, `code`, ```fenced blocks```, - lists.
  * Applies Linkify to plain text segments.
+ *
+ * `size="base"` swaps the compact log styling (text-xs/muted) for a more
+ * legible reading size — used for prose like the devocional roteiro.
  */
-export function Markdown({ text }: { text: string }) {
+export function Markdown({ text, size = "sm" }: { text: string; size?: "sm" | "base" }) {
+  const textSize = size === "base" ? "text-sm" : "text-xs";
+  const textColor = size === "base" ? "text-text-secondary" : "text-text-muted";
   const lines = text.split("\n");
   const elements: React.ReactNode[] = [];
   let listItems: React.ReactNode[] = [];
@@ -97,7 +102,7 @@ export function Markdown({ text }: { text: string }) {
     const listMatch = line.match(/^[-*] (.*)/);
     if (listMatch) {
       listItems.push(
-        <li key={i} className="text-xs text-text-muted">
+        <li key={i} className={`${textSize} ${textColor}`}>
           {renderInline(listMatch[1], `li-${i}`)}
         </li>
       );
@@ -108,7 +113,7 @@ export function Markdown({ text }: { text: string }) {
     const numMatch = line.match(/^\d+\.\s+(.*)/);
     if (numMatch) {
       listItems.push(
-        <li key={i} className="text-xs text-text-muted">
+        <li key={i} className={`${textSize} ${textColor}`}>
           {renderInline(numMatch[1], `li-${i}`)}
         </li>
       );
@@ -128,10 +133,25 @@ export function Markdown({ text }: { text: string }) {
       continue;
     }
 
+    // > blockquote
+    const quoteMatch = line.match(/^>\s?(.*)/);
+    if (quoteMatch) {
+      flushList();
+      elements.push(
+        <blockquote
+          key={i}
+          className={`border-l-2 border-border-divider pl-3 my-2 italic ${textSize} text-text-secondary`}
+        >
+          {renderInline(quoteMatch[1], `bq-${i}`)}
+        </blockquote>
+      );
+      continue;
+    }
+
     // Regular paragraph
     flushList();
     elements.push(
-      <p key={i} className="text-xs text-text-muted m-0 leading-relaxed">
+      <p key={i} className={`${textSize} ${textColor} m-0 leading-relaxed`}>
         {renderInline(line, `p-${i}`)}
       </p>
     );
@@ -148,5 +168,5 @@ export function Markdown({ text }: { text: string }) {
     );
   }
 
-  return <div className="space-y-0.5">{elements}</div>;
+  return <div className={size === "base" ? "space-y-3" : "space-y-0.5"}>{elements}</div>;
 }

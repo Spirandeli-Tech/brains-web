@@ -1,5 +1,5 @@
 import { ApiClient } from '../api-client'
-import type { Devocional } from './types'
+import type { Devocional, DevocionalDetail } from './types'
 
 export class DevocionaisClient {
   private client: ApiClient
@@ -10,5 +10,9 @@ export class DevocionaisClient {
 
   async list(): Promise<Devocional[]> {
     return this.client.get<Devocional[]>('/devocionais')
+  }
+
+  async get(slug: string): Promise<DevocionalDetail> {
+    return this.client.get<DevocionalDetail>(`/devocionais/${slug}`)
   }
 }
