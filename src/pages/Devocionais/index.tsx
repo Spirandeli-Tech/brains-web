@@ -12,6 +12,7 @@ import {
   VIDEO_STATUS_COLOR,
   VIDEO_STATUS_LABEL,
 } from "./constants";
+import { ScheduleSummary } from "./ScheduleSummary";
 
 export function DevocionaisPage() {
   const [devocionais, setDevocionais] = useState<Devocional[]>([]);
@@ -114,6 +115,7 @@ export function DevocionaisPage() {
           <Button icon={<ReloadOutlined />} onClick={() => void load()} loading={loading} />
         }
       />
+      {!loading && <ScheduleSummary devocionais={devocionais} />}
       <DataCard>
         <Table<Devocional>
           columns={columns}
