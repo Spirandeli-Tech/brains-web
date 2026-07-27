@@ -45,4 +45,8 @@ export class AutomationsClient {
   async runAutomationNow(id: string): Promise<AutomationRun> {
     return this.client.post<AutomationRun>(`/automations/${id}/run`, {}, true)
   }
+
+  async approveRun(runId: string): Promise<AutomationRun> {
+    return this.client.post<AutomationRun>(`/automations/runs/${runId}/approve`, {}, true)
+  }
 }

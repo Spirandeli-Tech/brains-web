@@ -5,13 +5,19 @@ export type AutomationFrequency =
   | 'weekly'
   | 'monthly'
   | 'custom_days'
-export type AutomationRunStatus = 'pending' | 'running' | 'done' | 'failed'
+export type AutomationRunStatus =
+  | 'pending'
+  | 'running'
+  | 'awaiting_approval'
+  | 'done'
+  | 'failed'
 
 export interface AutomationRun {
   id: string
   scheduled_for: string
   status: AutomationRunStatus
   is_manual: boolean
+  phase: number
   log: string | null
   result_summary: string | null
   error: string | null
@@ -34,6 +40,7 @@ export interface Automation {
   days_of_week: number[] | null
   time_of_day: string
   enabled: boolean
+  requires_approval: boolean
   created_at: string
   recent_runs: AutomationRun[]
 }
@@ -50,6 +57,7 @@ export interface CreateAutomationPayload {
   day_of_month?: number
   days_of_week?: number[]
   time_of_day?: string
+  requires_approval?: boolean
 }
 
 export interface UpdateAutomationPayload {
@@ -65,6 +73,7 @@ export interface UpdateAutomationPayload {
   days_of_week?: number[]
   time_of_day?: string
   enabled?: boolean
+  requires_approval?: boolean
 }
 
 export interface RepoInfo {

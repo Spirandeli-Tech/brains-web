@@ -36,6 +36,7 @@ interface FormValues {
   day_of_month?: number;
   days_of_week?: number[];
   time_of_day?: dayjs.Dayjs;
+  requires_approval?: boolean;
 }
 
 export function AutomationFormModal({
@@ -95,6 +96,7 @@ export function AutomationFormModal({
         day_of_month: prefillFrom.day_of_month ?? undefined,
         days_of_week: prefillFrom.days_of_week ?? undefined,
         time_of_day: utcTimeToLocal(prefillFrom.time_of_day),
+        requires_approval: prefillFrom.requires_approval,
       });
     } else {
       form.resetFields();
@@ -124,6 +126,7 @@ export function AutomationFormModal({
         time_of_day: values.time_of_day
           ? values.time_of_day.utc().format("HH:mm:ss")
           : undefined,
+        requires_approval: values.requires_approval ?? false,
       };
       if (isEdit && automation) {
         await automationsClient.updateAutomation(
@@ -252,6 +255,14 @@ export function AutomationFormModal({
 
         <Form.Item name="time_of_day" label="Time">
           <TimePicker format="HH:mm" minuteStep={15} style={{ width: "100%" }} />
+        </Form.Item>
+
+        <Form.Item
+          name="requires_approval"
+          valuePropName="checked"
+          extra="Quando marcado, a automação roda a fase de preparação, pausa em 'Aguardando você' e só conclui (publica) depois que você aprova na board. Ex.: /devocional-preparar-semana."
+        >
+          <Checkbox>Exigir aprovação antes de concluir</Checkbox>
         </Form.Item>
 
         <Form.Item

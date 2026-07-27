@@ -20,6 +20,7 @@ const FREQUENCY_LABELS: Record<AutomationFrequency, string> = {
 export const RUN_STATUS_COLOR: Record<AutomationRunStatus, string> = {
   pending: "default",
   running: "processing",
+  awaiting_approval: "warning",
   done: "success",
   failed: "error",
 };
@@ -61,7 +62,7 @@ export function computeDueAt(run: AutomationRun, automation: Automation): dayjs.
   return dayjs.utc(`${run.scheduled_for}T${automation.time_of_day}`).local();
 }
 
-export type RunDisplayState = "waiting" | "queued" | "running" | "done" | "failed";
+export type RunDisplayState = "waiting" | "queued" | "running" | "awaiting" | "done" | "failed";
 
 /**
  * Disambiguates the two "pending" sub-states the time-gating fix introduces:
@@ -70,6 +71,7 @@ export type RunDisplayState = "waiting" | "queued" | "running" | "done" | "faile
  */
 export function computeRunDisplayState(run: AutomationRun, automation: Automation): RunDisplayState {
   if (run.status === "running") return "running";
+  if (run.status === "awaiting_approval") return "awaiting";
   if (run.status === "done") return "done";
   if (run.status === "failed") return "failed";
   if (run.is_manual) return "queued";
@@ -84,6 +86,8 @@ export function runDisplayLabel(state: RunDisplayState, dueAtLocalLabel?: string
       return "Queued";
     case "running":
       return "Running";
+    case "awaiting":
+      return "Aguardando você";
     case "done":
       return "Done";
     case "failed":
@@ -95,6 +99,7 @@ export const RUN_DISPLAY_COLOR: Record<RunDisplayState, string> = {
   waiting: "default",
   queued: "default",
   running: "processing",
+  awaiting: "warning",
   done: "success",
   failed: "error",
 };

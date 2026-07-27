@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Alert, Button, Collapse, Empty, Spin, Switch, Tag, Tooltip, message } from "antd";
 import {
   ArrowLeftOutlined,
+  CheckCircleOutlined,
   CopyOutlined,
   DeleteOutlined,
   EditOutlined,
@@ -23,9 +24,20 @@ import { AutomationFormModal } from "../AutomationFormModal";
 
 const LOG_BLOCK_STYLE = { background: "#0d1117", color: "#e6edf3" } as const;
 
-function RunCard({ run, automation }: { run: AutomationRun; automation: Automation }) {
+function RunCard({
+  run,
+  automation,
+  onApprove,
+  approving,
+}: {
+  run: AutomationRun;
+  automation: Automation;
+  onApprove: (runId: string) => void;
+  approving: boolean;
+}) {
   const state = computeRunDisplayState(run, automation);
   const dueAtLabel = state === "waiting" ? computeDueAt(run, automation).format("HH:mm") : undefined;
+  const isAwaiting = run.status === "awaiting_approval";
 
   const collapseItems = run.log
     ? [
@@ -64,10 +76,31 @@ function RunCard({ run, automation }: { run: AutomationRun; automation: Automati
 
       {run.error && <Alert type="error" showIcon message="Error" description={run.error} />}
 
+      {isAwaiting && (
+        <Alert
+          type="warning"
+          showIcon
+          message="Aguardando sua aprovação"
+          description="A fase de preparação terminou. Revise o preview abaixo e aprove para publicar."
+          action={
+            <Button
+              type="primary"
+              icon={<CheckCircleOutlined />}
+              loading={approving}
+              onClick={() => onApprove(run.id)}
+            >
+              Aprovar & publicar
+            </Button>
+          }
+        />
+      )}
+
       {run.result_summary && (
         <div>
           <div className="flex items-center justify-between mb-1">
-            <p className="text-xs font-semibold text-gray-500">Result</p>
+            <p className="text-xs font-semibold text-gray-500">
+              {isAwaiting ? "Preview (revise antes de aprovar)" : "Result"}
+            </p>
             <Tooltip title="Copy to clipboard">
               <Button
                 icon={<CopyOutlined />}
@@ -103,6 +136,7 @@ export function AutomationDetailPage() {
   const [toggling, setToggling] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [running, setRunning] = useState(false);
+  const [approvingRunId, setApprovingRunId] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
 
@@ -178,6 +212,21 @@ export function AutomationDetailPage() {
       );
     } finally {
       setRunning(false);
+    }
+  };
+
+  const handleApprove = async (runId: string) => {
+    setApprovingRunId(runId);
+    try {
+      await automationsClient.approveRun(runId);
+      message.success("Aprovado — publicando");
+      await fetchAutomation(true);
+    } catch (error) {
+      message.error(
+        error instanceof Error ? error.message : "Falha ao aprovar o run"
+      );
+    } finally {
+      setApprovingRunId(null);
     }
   };
 
@@ -281,7 +330,13 @@ export function AutomationDetailPage() {
               </DataCard>
             ) : (
               automation.recent_runs.map((run) => (
-                <RunCard key={run.id} run={run} automation={automation} />
+                <RunCard
+                  key={run.id}
+                  run={run}
+                  automation={automation}
+                  onApprove={handleApprove}
+                  approving={approvingRunId === run.id}
+                />
               ))
             )}
           </div>
