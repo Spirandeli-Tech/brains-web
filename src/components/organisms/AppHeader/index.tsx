@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
 import { GlobalSearch } from "@/components/organisms/GlobalSearch";
 import { NotificationBell } from "@/components/organisms/NotificationBell";
+import { RunnerStatusPill } from "@/components/organisms/RunnerStatusPill";
 
 export function AppHeader() {
   const { user, signOut } = useAuth();
@@ -48,6 +49,7 @@ export function AppHeader() {
       <GlobalSearch />
 
       <div className="flex items-center gap-2">
+        <RunnerStatusPill />
         <NotificationBell />
 
         <Dropdown
