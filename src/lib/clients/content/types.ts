@@ -85,6 +85,7 @@ export interface VideoScript {
   growth_checklist: GrowthChecklistItem[]
   short_cuts: string[]
   persona: string | null
+  topics_md: string | null
   created_at: string
 }
 

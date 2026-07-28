@@ -98,4 +98,20 @@ export class ContentClient {
   async deleteScript(videoId: string, scriptId: string): Promise<void> {
     return this.client.delete<void>(`/content/videos/${videoId}/scripts/${scriptId}`)
   }
+
+  /** Drafts the cola via Gemini from the script's body — the draft is NOT
+   * persisted; call `saveTopics` after the user reviews/edits it. */
+  async generateTopics(videoId: string, scriptId: string): Promise<{ topics_md: string }> {
+    return this.client.post<{ topics_md: string }>(
+      `/content/videos/${videoId}/scripts/${scriptId}/topics/generate`,
+      {},
+      true,
+    )
+  }
+
+  async saveTopics(videoId: string, scriptId: string, topicsMd: string): Promise<VideoScript> {
+    return this.client.put<VideoScript>(`/content/videos/${videoId}/scripts/${scriptId}/topics`, {
+      topics_md: topicsMd,
+    })
+  }
 }

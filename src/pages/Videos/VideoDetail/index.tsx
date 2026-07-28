@@ -26,6 +26,7 @@ import dayjs from "dayjs";
 import contentClient from "@/lib/clients/content";
 import type { VideoDetail, VideoScript, VideoStatus } from "@/lib/clients/content";
 import { PageHeader, DataCard } from "@/components/molecules";
+import { Markdown } from "@/pages/Implementations/components/Markdown";
 import {
   FORMAT_COLOR,
   FORMAT_HINT,
@@ -38,6 +39,7 @@ import { VideoFormModal } from "../VideoFormModal";
 import { ScriptFormModal } from "./ScriptFormModal";
 import { DerivativeFormModal } from "./DerivativeFormModal";
 import { MetricsFormModal } from "./MetricsFormModal";
+import { ColaTab } from "./ColaTab";
 
 function ScriptVersion({
   script,
@@ -92,9 +94,11 @@ function ScriptVersion({
 
       <div>
         <p className="text-xs font-semibold text-text-muted mb-1.5">Script</p>
-        <pre className="text-xs font-mono whitespace-pre-wrap break-words bg-bg-hover rounded p-3 leading-relaxed m-0">
-          {script.body}
-        </pre>
+        {/* Roteiros are written in Markdown (headings, nested bullets, tables, quotes), so
+            they're rendered — the copy button above still yields the raw source. */}
+        <div className="bg-bg-hover rounded px-4 py-3">
+          <Markdown text={script.body} size="base" />
+        </div>
       </div>
 
       {script.short_cuts.length > 0 && (
@@ -314,6 +318,19 @@ export function VideoDetailPage() {
               </DataCard>
             ),
           },
+          ...(activeScript
+            ? [
+                {
+                  key: "cola",
+                  label: "Cola",
+                  children: (
+                    <DataCard>
+                      <ColaTab videoId={video.id} script={activeScript} onSaved={() => void load()} />
+                    </DataCard>
+                  ),
+                },
+              ]
+            : []),
           ...(video.parent_id
             ? []
             : [
