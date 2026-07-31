@@ -37,6 +37,7 @@ interface FormValues {
   days_of_week?: number[];
   time_of_day?: dayjs.Dayjs;
   requires_approval?: boolean;
+  tags?: string[];
 }
 
 export function AutomationFormModal({
@@ -45,6 +46,7 @@ export function AutomationFormModal({
   onSaved,
   automation,
   duplicateFrom,
+  existingTags,
 }: {
   open: boolean;
   onClose: () => void;
@@ -53,6 +55,8 @@ export function AutomationFormModal({
   automation?: Automation | null;
   /** When set (and `automation` isn't), pre-fills a new automation's fields from this one. */
   duplicateFrom?: Automation | null;
+  /** Tags already used across the user's automations, offered as autocomplete options. */
+  existingTags?: string[];
 }) {
   const [form] = Form.useForm<FormValues>();
   const [saving, setSaving] = useState(false);
@@ -62,6 +66,7 @@ export function AutomationFormModal({
   const connectionName = Form.useWatch("connection_name", form);
   const isEdit = !!automation;
   const prefillFrom = automation ?? duplicateFrom;
+  const tagOptions = (existingTags ?? []).map((t) => ({ value: t, label: t }));
 
   const selectedConnection = connections.find((c) => c.name === connectionName);
   const repoOptions = (selectedConnection?.repos ?? []).map((r) => ({
@@ -97,6 +102,7 @@ export function AutomationFormModal({
         days_of_week: prefillFrom.days_of_week ?? undefined,
         time_of_day: utcTimeToLocal(prefillFrom.time_of_day),
         requires_approval: prefillFrom.requires_approval,
+        tags: prefillFrom.tags ?? [],
       });
     } else {
       form.resetFields();
@@ -127,6 +133,7 @@ export function AutomationFormModal({
           ? values.time_of_day.utc().format("HH:mm:ss")
           : undefined,
         requires_approval: values.requires_approval ?? false,
+        tags: (values.tags ?? []).map((t) => t.trim().toLowerCase()).filter(Boolean),
       };
       if (isEdit && automation) {
         await automationsClient.updateAutomation(
@@ -263,6 +270,19 @@ export function AutomationFormModal({
           extra="Quando marcado, a automação roda a fase de preparação, pausa em 'Aguardando você' e só conclui (publica) depois que você aprova na board. Ex.: /devocional-preparar-semana."
         >
           <Checkbox>Exigir aprovação antes de concluir</Checkbox>
+        </Form.Item>
+
+        <Form.Item
+          name="tags"
+          label="Tags (optional)"
+          extra="Labels para agrupar essa automação na listagem. Pode ter mais de uma."
+        >
+          <Select
+            mode="tags"
+            tokenSeparators={[","]}
+            placeholder="e.g. financeiro, devocional"
+            options={tagOptions}
+          />
         </Form.Item>
 
         <Form.Item

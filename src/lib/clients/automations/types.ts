@@ -41,6 +41,7 @@ export interface Automation {
   time_of_day: string
   enabled: boolean
   requires_approval: boolean
+  tags: string[]
   created_at: string
   recent_runs: AutomationRun[]
 }
@@ -58,6 +59,7 @@ export interface CreateAutomationPayload {
   days_of_week?: number[]
   time_of_day?: string
   requires_approval?: boolean
+  tags?: string[]
 }
 
 export interface UpdateAutomationPayload {
@@ -74,6 +76,7 @@ export interface UpdateAutomationPayload {
   time_of_day?: string
   enabled?: boolean
   requires_approval?: boolean
+  tags?: string[]
 }
 
 export interface RepoInfo {

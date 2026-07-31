@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Badge,
   Button,
@@ -6,6 +6,7 @@ import {
   Empty,
   Spin,
   Switch,
+  Tabs,
   Tag,
   Tooltip,
   message,
@@ -99,6 +100,15 @@ function AutomationCard({
             {automation.skill}
           </code>
           <span className="text-xs text-gray-500">{formatFrequency(automation)}</span>
+          {automation.tags && automation.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {automation.tags.map((t) => (
+                <Tag key={t} className="text-xs">
+                  {t}
+                </Tag>
+              ))}
+            </div>
+          )}
           {automation.instructions && (
             <Tooltip title={automation.instructions}>
               <span className="text-xs text-gray-400 truncate max-w-xs">
@@ -171,8 +181,40 @@ export function AutomationsPage() {
   const [toggling, setToggling] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [running, setRunning] = useState<string | null>(null);
+  const [activeTag, setActiveTag] = useState<string>("all");
 
   const pollRef = useRef<number | null>(null);
+
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    automations.forEach((a) => (a.tags ?? []).forEach((t) => set.add(t)));
+    return Array.from(set).sort();
+  }, [automations]);
+
+  const hasUntagged = useMemo(
+    () => automations.some((a) => !(a.tags && a.tags.length)),
+    [automations]
+  );
+
+  // If the active tab's tag disappears (last automation with it was edited/deleted),
+  // fall back to "all" instead of showing an empty, orphaned tab.
+  useEffect(() => {
+    if (activeTag !== "all" && activeTag !== "__untagged__" && !allTags.includes(activeTag)) {
+      setActiveTag("all");
+    }
+  }, [allTags, activeTag]);
+
+  const filteredAutomations = useMemo(() => {
+    if (activeTag === "all") return automations;
+    if (activeTag === "__untagged__") return automations.filter((a) => !(a.tags && a.tags.length));
+    return automations.filter((a) => (a.tags ?? []).includes(activeTag));
+  }, [automations, activeTag]);
+
+  const tabItems = [
+    { key: "all", label: "All" },
+    ...allTags.map((t) => ({ key: t, label: t })),
+    ...(hasUntagged ? [{ key: "__untagged__", label: "Untagged" }] : []),
+  ];
 
   const fetchAutomations = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -280,13 +322,34 @@ export function AutomationsPage() {
       />
 
       <DataCard>
+        {allTags.length > 0 && (
+          <Tabs
+            activeKey={activeTag}
+            onChange={setActiveTag}
+            items={tabItems}
+            className="mb-2"
+          />
+        )}
         {loading && automations.length === 0 ? (
           <div className="flex justify-center py-12">
             <Spin />
           </div>
-        ) : automations.length > 0 ? (
+        ) : automations.length === 0 ? (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="No automations yet."
+          >
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setModalOpen(true)}
+            >
+              New Automation
+            </Button>
+          </Empty>
+        ) : filteredAutomations.length > 0 ? (
           <div className="flex flex-col gap-3">
-            {automations.map((automation) => (
+            {filteredAutomations.map((automation) => (
               <AutomationCard
                 key={automation.id}
                 automation={automation}
@@ -304,16 +367,8 @@ export function AutomationsPage() {
         ) : (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="No automations yet."
-          >
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setModalOpen(true)}
-            >
-              New Automation
-            </Button>
-          </Empty>
+            description="No automations with this tag."
+          />
         )}
       </DataCard>
 
@@ -321,6 +376,7 @@ export function AutomationsPage() {
         open={modalOpen || !!editingAutomation || !!duplicatingFrom}
         automation={editingAutomation}
         duplicateFrom={duplicatingFrom}
+        existingTags={allTags}
         onClose={() => {
           setModalOpen(false);
           setEditingAutomation(null);
