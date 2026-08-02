@@ -19,6 +19,7 @@ import {
   VIDEO_STATUS_COLOR,
   VIDEO_STATUS_LABEL,
 } from "../constants";
+import { Thumbnail } from "../Thumbnail";
 
 export function DevocionalDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -67,6 +68,11 @@ export function DevocionalDetailPage() {
       />
 
       <DataCard>
+        <Thumbnail
+          src={devocional.imagem_url}
+          alt={devocional.titulo}
+          className="w-full max-w-md aspect-video mb-4"
+        />
         <Descriptions column={2} size="small" bordered>
           <Descriptions.Item label="Data">
             {dayjs(devocional.data).format("DD/MM/YYYY")}

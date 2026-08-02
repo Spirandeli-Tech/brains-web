@@ -9,6 +9,7 @@ export interface Devocional {
   resumo: string | null
   blog_url: string
   blog_status: BlogStatus
+  imagem_url: string | null
   telegram_sent_at: string | null
   video_status: VideoStatus
   video_youtube_url: string | null
@@ -18,7 +19,6 @@ export interface Devocional {
 export interface DevocionalDetail extends Devocional {
   tema: string | null
   tags: string[]
-  imagem: string | null
   roteiro: string
   telegram_mensagem: string | null
   video_title: string | null

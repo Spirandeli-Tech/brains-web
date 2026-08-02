@@ -14,6 +14,7 @@ import {
   VIDEO_STATUS_LABEL,
 } from "./constants";
 import { ScheduleSummary } from "./ScheduleSummary";
+import { Thumbnail } from "./Thumbnail";
 
 export function DevocionaisPage() {
   const navigate = useNavigate();
@@ -34,6 +35,14 @@ export function DevocionaisPage() {
   }, [load]);
 
   const columns: ColumnsType<Devocional> = [
+    {
+      title: "",
+      key: "thumb",
+      width: 88,
+      render: (_, record) => (
+        <Thumbnail src={record.imagem_url} alt={record.titulo} className="w-16 h-9" />
+      ),
+    },
     {
       title: "Data",
       dataIndex: "data",
