@@ -23,6 +23,7 @@ export const RUN_STATUS_COLOR: Record<AutomationRunStatus, string> = {
   awaiting_approval: "warning",
   done: "success",
   failed: "error",
+  cancelled: "default",
 };
 
 /** Convert a UTC "HH:mm:ss" clock time to a local-timezone dayjs instance, anchored to today. */
@@ -62,7 +63,14 @@ export function computeDueAt(run: AutomationRun, automation: Automation): dayjs.
   return dayjs.utc(`${run.scheduled_for}T${automation.time_of_day}`).local();
 }
 
-export type RunDisplayState = "waiting" | "queued" | "running" | "awaiting" | "done" | "failed";
+export type RunDisplayState =
+  | "waiting"
+  | "queued"
+  | "running"
+  | "awaiting"
+  | "done"
+  | "failed"
+  | "cancelled";
 
 /**
  * Disambiguates the two "pending" sub-states the time-gating fix introduces:
@@ -74,6 +82,7 @@ export function computeRunDisplayState(run: AutomationRun, automation: Automatio
   if (run.status === "awaiting_approval") return "awaiting";
   if (run.status === "done") return "done";
   if (run.status === "failed") return "failed";
+  if (run.status === "cancelled") return "cancelled";
   if (run.is_manual) return "queued";
   return computeDueAt(run, automation).isAfter(dayjs()) ? "waiting" : "queued";
 }
@@ -92,6 +101,8 @@ export function runDisplayLabel(state: RunDisplayState, dueAtLocalLabel?: string
       return "Done";
     case "failed":
       return "Failed";
+    case "cancelled":
+      return "Cancelado";
   }
 }
 
@@ -102,4 +113,5 @@ export const RUN_DISPLAY_COLOR: Record<RunDisplayState, string> = {
   awaiting: "warning",
   done: "success",
   failed: "error",
+  cancelled: "default",
 };

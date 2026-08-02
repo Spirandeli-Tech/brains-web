@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Alert, Button, Collapse, Empty, Spin, Switch, Tag, Tooltip, message } from "antd";
 import {
   ArrowLeftOutlined,
@@ -29,11 +29,13 @@ function RunCard({
   automation,
   onApprove,
   approving,
+  highlighted,
 }: {
   run: AutomationRun;
   automation: Automation;
   onApprove: (runId: string) => void;
   approving: boolean;
+  highlighted: boolean;
 }) {
   const state = computeRunDisplayState(run, automation);
   const dueAtLabel = state === "waiting" ? computeDueAt(run, automation).format("HH:mm") : undefined;
@@ -57,7 +59,12 @@ function RunCard({
     : [];
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4 flex flex-col gap-3">
+    <div
+      id={`run-${run.id}`}
+      className={`border rounded-lg p-4 flex flex-col gap-3 ${
+        highlighted ? "border-blue-500 ring-2 ring-blue-100" : "border-gray-200"
+      }`}
+    >
       <div className="flex items-center gap-2 flex-wrap">
         <Tag color={RUN_DISPLAY_COLOR[state]}>{runDisplayLabel(state, dueAtLabel)}</Tag>
         {run.is_manual && <Tag>manual</Tag>}
@@ -122,7 +129,16 @@ function RunCard({
         </div>
       )}
 
-      {collapseItems.length > 0 && <Collapse size="small" ghost items={collapseItems} />}
+      {collapseItems.length > 0 && (
+        <Collapse
+          size="small"
+          ghost
+          items={collapseItems}
+          // Arriving from the runner ("ver os logs desse job") — open the log
+          // straight away instead of making the user hunt for the toggle.
+          defaultActiveKey={highlighted ? ["log"] : undefined}
+        />
+      )}
     </div>
   );
 }
@@ -130,6 +146,9 @@ function RunCard({
 export function AutomationDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  // ?run=<uuid> — set by the Runner page so a click on a job lands on its log.
+  const [searchParams] = useSearchParams();
+  const focusedRunId = searchParams.get("run");
   const [automation, setAutomation] = useState<Automation | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -166,6 +185,18 @@ export function AutomationDetailPage() {
   useEffect(() => {
     fetchAutomation();
   }, [fetchAutomation]);
+
+  // Scroll the focused run into view once — after the runs render, and without
+  // fighting the poll that re-renders them every few seconds.
+  const scrolledToRunRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!automation || !focusedRunId) return;
+    if (scrolledToRunRef.current === focusedRunId) return;
+    const el = document.getElementById(`run-${focusedRunId}`);
+    if (!el) return;
+    scrolledToRunRef.current = focusedRunId;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [automation, focusedRunId]);
 
   useEffect(() => {
     if (!automation) return;
@@ -336,6 +367,7 @@ export function AutomationDetailPage() {
                   automation={automation}
                   onApprove={handleApprove}
                   approving={approvingRunId === run.id}
+                  highlighted={run.id === focusedRunId}
                 />
               ))
             )}

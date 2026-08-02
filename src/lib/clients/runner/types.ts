@@ -33,6 +33,9 @@ export interface QueueItem {
   started_at: string | null
   due_at: string | null
   error: string | null
+  /** Route with this run's log/detail, when the kind has one (automations do). */
+  url_path: string | null
+  can_cancel: boolean
 }
 
 export type TerminalStatus = 'done' | 'failed' | 'cancelled'
@@ -47,6 +50,7 @@ export interface RecentRun {
   finished_at: string | null
   duration_seconds: number | null
   error: string | null
+  url_path: string | null
 }
 
 export interface RunnerOverview {

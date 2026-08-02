@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Badge, Button, Empty, Spin, Tag, Tooltip, message } from "antd";
+import { useNavigate } from "react-router-dom";
+import { Badge, Button, Empty, Popconfirm, Spin, Tag, Tooltip, message } from "antd";
 import {
   AuditOutlined,
   BulbOutlined,
   ClockCircleOutlined,
   CommentOutlined,
   ReloadOutlined,
+  StopOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons";
 import runnerClient from "@/lib/clients/runner";
@@ -74,9 +76,27 @@ function RunnerCard({ runner }: { runner: RunnerStatus }) {
   );
 }
 
+/** Rows only open a screen when the kind actually has one (today: automations). */
+function useOpenRun() {
+  const navigate = useNavigate();
+  return useCallback(
+    (urlPath: string | null) => {
+      if (urlPath) navigate(urlPath);
+    },
+    [navigate]
+  );
+}
+
 function CurrentJobCard({ item }: { item: QueueItem }) {
+  const open = useOpenRun();
+  const clickable = Boolean(item.url_path);
   return (
-    <DataCard className="border-l-4 border-l-blue-500">
+    <DataCard
+      className={`border-l-4 border-l-blue-500 ${
+        clickable ? "cursor-pointer hover:border-blue-400" : ""
+      }`}
+      onClick={clickable ? () => open(item.url_path) : undefined}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -102,9 +122,26 @@ function CurrentJobCard({ item }: { item: QueueItem }) {
   );
 }
 
-function QueueRow({ item, position }: { item: QueueItem; position: number }) {
+function QueueRow({
+  item,
+  position,
+  onCancel,
+  cancelling,
+}: {
+  item: QueueItem;
+  position: number;
+  onCancel: (item: QueueItem) => void;
+  cancelling: boolean;
+}) {
+  const open = useOpenRun();
+  const clickable = Boolean(item.url_path);
   return (
-    <div className="flex items-center gap-3 py-2.5 px-1 border-b border-border-subtle last:border-b-0">
+    <div
+      className={`flex items-center gap-3 py-2.5 px-1 border-b border-border-subtle last:border-b-0 ${
+        clickable ? "cursor-pointer hover:bg-black/[0.02]" : ""
+      }`}
+      onClick={clickable ? () => open(item.url_path) : undefined}
+    >
       <span className="w-6 text-center text-sm text-text-muted tabular-nums shrink-0">
         {position}
       </span>
@@ -136,13 +173,42 @@ function QueueRow({ item, position }: { item: QueueItem; position: number }) {
           )}
         </div>
       </span>
+      {item.can_cancel && (
+        <span className="shrink-0" onClick={(e) => e.stopPropagation()}>
+          <Popconfirm
+            title="Cancelar este job?"
+            description="Ele sai da fila e não vai rodar."
+            okText="Cancelar job"
+            cancelText="Voltar"
+            okButtonProps={{ danger: true }}
+            onConfirm={() => onCancel(item)}
+          >
+            <Tooltip title="Cancelar">
+              <Button
+                type="text"
+                danger
+                size="small"
+                icon={<StopOutlined />}
+                loading={cancelling}
+              />
+            </Tooltip>
+          </Popconfirm>
+        </span>
+      )}
     </div>
   );
 }
 
 function RecentRow({ item }: { item: RecentRun }) {
+  const open = useOpenRun();
+  const clickable = Boolean(item.url_path);
   return (
-    <div className="flex items-center gap-3 py-2.5 px-1 border-b border-border-subtle last:border-b-0">
+    <div
+      className={`flex items-center gap-3 py-2.5 px-1 border-b border-border-subtle last:border-b-0 ${
+        clickable ? "cursor-pointer hover:bg-black/[0.02]" : ""
+      }`}
+      onClick={clickable ? () => open(item.url_path) : undefined}
+    >
       <span className="shrink-0">
         <KindTag kind={item.kind} />
       </span>
@@ -182,6 +248,7 @@ function RecentRow({ item }: { item: RecentRun }) {
 export function RunnerPage() {
   const [overview, setOverview] = useState<RunnerOverview | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const pollRef = useRef<number | null>(null);
 
   const fetchOverview = useCallback(async (silent = false) => {
@@ -196,6 +263,24 @@ export function RunnerPage() {
       if (!silent) setLoading(false);
     }
   }, []);
+
+  const handleCancel = useCallback(
+    async (item: QueueItem) => {
+      setCancellingId(item.id);
+      try {
+        await runnerClient.cancelQueuedRun(item.kind, item.id);
+        message.success("Job cancelado");
+      } catch (err) {
+        message.error(
+          err instanceof Error ? err.message : "Falha ao cancelar o job"
+        );
+      } finally {
+        setCancellingId(null);
+        await fetchOverview(true);
+      }
+    },
+    [fetchOverview]
+  );
 
   useEffect(() => {
     fetchOverview();
@@ -289,6 +374,8 @@ export function RunnerPage() {
                       key={`${item.kind}-${item.id}`}
                       item={item}
                       position={i + 1}
+                      onCancel={handleCancel}
+                      cancelling={cancellingId === item.id}
                     />
                   ))}
                 </div>

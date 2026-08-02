@@ -11,6 +11,7 @@ export type AutomationRunStatus =
   | 'awaiting_approval'
   | 'done'
   | 'failed'
+  | 'cancelled'
 
 export interface AutomationRun {
   id: string
