@@ -46,6 +46,8 @@ interface RunCardProps {
   restartingRunId?: string | null;
   discussingStepId?: string | null;
   iteratingRunId?: string | null;
+  /** Came in from the Runner page via `?run=` — call it out. */
+  highlighted?: boolean;
 }
 
 
@@ -74,6 +76,7 @@ export function RunCard({
   cancellingRunId,
   restartingRunId,
   discussingStepId,
+  highlighted = false,
 }: RunCardProps) {
   const [promptVisible, setPromptVisible] = useState(false);
 
@@ -106,7 +109,12 @@ export function RunCard({
   );
 
   return (
-    <div className="bg-bg-card border border-border-subtle rounded-xl shadow-card overflow-hidden">
+    <div
+      id={`run-${run.id}`}
+      className={`bg-bg-card border rounded-xl shadow-card overflow-hidden ${
+        highlighted ? "border-brand-primary ring-2 ring-blue-100" : "border-border-subtle"
+      }`}
+    >
       {/* Header */}
       <div className="flex items-start justify-between gap-3 p-4 border-b border-border-divider">
         <div className="min-w-0">

@@ -493,6 +493,8 @@ interface FixCardProps {
   approvingStepId: string | null;
   cancellingRunId: string | null;
   restartingRunId: string | null;
+  /** Came in from the Runner page via `?run=` — call it out. */
+  highlighted?: boolean;
 }
 
 export function FixCard({
@@ -504,6 +506,7 @@ export function FixCard({
   approvingStepId,
   cancellingRunId,
   restartingRunId,
+  highlighted = false,
 }: FixCardProps) {
   const tag = RUN_STATUS_TAG[run.status];
   const isTerminal = run.status === "done" || run.status === "cancelled";
@@ -540,7 +543,12 @@ export function FixCard({
   const prLabel = run.pr_number ? `#${run.pr_number}` : null;
 
   return (
-    <div className="bg-bg-card border border-border-subtle rounded-xl shadow-card overflow-hidden">
+    <div
+      id={`run-${run.id}`}
+      className={`bg-bg-card border rounded-xl shadow-card overflow-hidden ${
+        highlighted ? "border-brand-primary ring-2 ring-blue-100" : "border-border-subtle"
+      }`}
+    >
       <div className="flex items-start justify-between gap-3 p-4 border-b border-border-divider">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">

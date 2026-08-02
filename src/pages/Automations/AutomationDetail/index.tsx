@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Alert, Button, Collapse, Empty, Spin, Switch, Tag, Tooltip, message } from "antd";
 import {
   ArrowLeftOutlined,
@@ -12,6 +12,7 @@ import {
 import automationsClient from "@/lib/clients/automations";
 import type { Automation, AutomationRun } from "@/lib/clients/automations";
 import { PageHeader, DataCard, Linkify } from "@/components/molecules";
+import { useFocusedRun } from "@/lib/use-focused-run";
 import {
   AUTOMATION_POLL_INTERVAL_MS,
   RUN_DISPLAY_COLOR,
@@ -146,10 +147,9 @@ function RunCard({
 export function AutomationDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  // ?run=<uuid> — set by the Runner page so a click on a job lands on its log.
-  const [searchParams] = useSearchParams();
-  const focusedRunId = searchParams.get("run");
   const [automation, setAutomation] = useState<Automation | null>(null);
+  // ?run=<uuid> — set by the Runner page so a click on a job lands on its log.
+  const focusedRunId = useFocusedRun(Boolean(automation?.recent_runs.length));
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [toggling, setToggling] = useState(false);
@@ -185,18 +185,6 @@ export function AutomationDetailPage() {
   useEffect(() => {
     fetchAutomation();
   }, [fetchAutomation]);
-
-  // Scroll the focused run into view once — after the runs render, and without
-  // fighting the poll that re-renders them every few seconds.
-  const scrolledToRunRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!automation || !focusedRunId) return;
-    if (scrolledToRunRef.current === focusedRunId) return;
-    const el = document.getElementById(`run-${focusedRunId}`);
-    if (!el) return;
-    scrolledToRunRef.current = focusedRunId;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [automation, focusedRunId]);
 
   useEffect(() => {
     if (!automation) return;

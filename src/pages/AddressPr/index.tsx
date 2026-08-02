@@ -6,6 +6,7 @@ import type { FixRun, RunStatus } from "@/lib/clients/address-pr";
 import { productivityClient } from "@/lib/clients/productivity";
 import type { ConnectionListItem } from "@/lib/clients/productivity";
 import { PageHeader, DataCard } from "@/components/molecules";
+import { useFocusedRun } from "@/lib/use-focused-run";
 import { FixStats } from "./components/FixStats";
 import { FixCard } from "./components/FixCard";
 import { LaunchModal } from "./components/LaunchModal";
@@ -24,7 +25,10 @@ export function AddressPrPage() {
   const [runs, setRuns] = useState<FixRun[]>([]);
   const [connections, setConnections] = useState<ConnectionListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<RunFilter>("active");
+  const focusedRunId = useFocusedRun(runs.length > 0);
+  // Deep link from the Runner: the run may well be finished, and the default
+  // "active" filter would hide the very card we were sent here to look at.
+  const [filter, setFilter] = useState<RunFilter>(focusedRunId ? "all" : "active");
 
   const [prUrl, setPrUrl] = useState("");
   const [composerOrg, setComposerOrg] = useState<string>("");
@@ -211,6 +215,7 @@ export function AddressPrPage() {
                 approvingStepId={approvingStepId}
                 cancellingRunId={cancellingRunId}
                 restartingRunId={restartingRunId}
+                highlighted={run.id === focusedRunId}
               />
             ))}
           </div>

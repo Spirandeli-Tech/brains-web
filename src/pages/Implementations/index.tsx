@@ -14,6 +14,7 @@ import type { ImplementationRun, RunStatus } from "@/lib/clients/implementations
 import { productivityClient } from "@/lib/clients/productivity";
 import type { ConnectionListItem } from "@/lib/clients/productivity";
 import { PageHeader, DataCard } from "@/components/molecules";
+import { useFocusedRun } from "@/lib/use-focused-run";
 import { ImplementationStats } from "./components/ImplementationStats";
 import { RunCard } from "./components/RunCard";
 import { LaunchModal } from "./components/LaunchModal";
@@ -32,7 +33,10 @@ export function ImplementationsPage() {
   const [runs, setRuns] = useState<ImplementationRun[]>([]);
   const [connections, setConnections] = useState<ConnectionListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<RunFilter>("active");
+  const focusedRunId = useFocusedRun(runs.length > 0);
+  // Deep link from the Runner: the run may well be finished, and the default
+  // "active" filter would hide the very card we were sent here to look at.
+  const [filter, setFilter] = useState<RunFilter>(focusedRunId ? "all" : "active");
   const [usingMock, setUsingMock] = useState(false);
 
   // Inline composer state (header)
@@ -247,6 +251,7 @@ export function ImplementationsPage() {
                 restartingRunId={restartingRunId}
                 discussingStepId={discussingStepId}
                 iteratingRunId={iteratingRunId}
+                highlighted={run.id === focusedRunId}
               />
             ))}
           </div>

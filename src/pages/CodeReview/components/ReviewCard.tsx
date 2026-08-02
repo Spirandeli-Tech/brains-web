@@ -474,6 +474,8 @@ interface ReviewCardProps {
   approvingStepId: string | null;
   cancellingRunId: string | null;
   restartingRunId: string | null;
+  /** Came in from the Runner page via `?run=` — call it out. */
+  highlighted?: boolean;
 }
 
 export function ReviewCard({
@@ -485,6 +487,7 @@ export function ReviewCard({
   approvingStepId,
   cancellingRunId,
   restartingRunId,
+  highlighted = false,
 }: ReviewCardProps) {
   const tag = RUN_STATUS_TAG[run.status];
   const isTerminal = run.status === "done" || run.status === "cancelled";
@@ -525,7 +528,12 @@ export function ReviewCard({
   const repoLabel = run.repo_name ?? repoFromUrl ?? null;
 
   return (
-    <div className="bg-bg-card border border-border-subtle rounded-xl shadow-card overflow-hidden">
+    <div
+      id={`run-${run.id}`}
+      className={`bg-bg-card border rounded-xl shadow-card overflow-hidden ${
+        highlighted ? "border-brand-primary ring-2 ring-blue-100" : "border-border-subtle"
+      }`}
+    >
       {/* Header */}
       <div className="flex items-start justify-between gap-3 p-4 border-b border-border-divider">
         <div className="min-w-0">
