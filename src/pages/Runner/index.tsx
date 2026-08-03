@@ -6,6 +6,7 @@ import {
   BulbOutlined,
   ClockCircleOutlined,
   CommentOutlined,
+  PoweroffOutlined,
   ReloadOutlined,
   StopOutlined,
   ThunderboltOutlined,
@@ -49,7 +50,15 @@ function KindTag({ kind }: { kind: RunKind }) {
   );
 }
 
-function RunnerCard({ runner }: { runner: RunnerStatus }) {
+function RunnerCard({
+  runner,
+  onRestart,
+  restarting,
+}: {
+  runner: RunnerStatus;
+  onRestart: (runner: RunnerStatus) => void;
+  restarting: boolean;
+}) {
   const secs = Math.round(runner.seconds_since_last_seen);
   return (
     <DataCard className="flex items-center justify-between gap-4">
@@ -71,6 +80,37 @@ function RunnerCard({ runner }: { runner: RunnerStatus }) {
         {!runner.online && (
           <Tag color="error">nenhum job vai rodar até religar</Tag>
         )}
+        {runner.restart_pending && <Tag color="processing">reiniciando…</Tag>}
+        <Popconfirm
+          title="Reiniciar o runner?"
+          description="O job em execução é morto e marcado como falho. A fila volta a andar em poucos segundos."
+          okText="Reiniciar"
+          cancelText="Voltar"
+          okButtonProps={{ danger: true }}
+          disabled={!runner.online}
+          onConfirm={() => onRestart(runner)}
+        >
+          <Tooltip
+            title={
+              runner.online
+                ? "Mata o job atual e sobe o runner de novo — use quando a fila travar"
+                : "Runner offline: ele precisa estar de pé pra receber o pedido (make runner-start na máquina)"
+            }
+          >
+            {/* span: um Button desabilitado não emite eventos, o Tooltip precisa do wrapper */}
+            <span>
+              <Button
+                size="small"
+                danger
+                icon={<PoweroffOutlined />}
+                loading={restarting || runner.restart_pending}
+                disabled={!runner.online}
+              >
+                Reiniciar
+              </Button>
+            </span>
+          </Tooltip>
+        </Popconfirm>
       </div>
     </DataCard>
   );
@@ -249,6 +289,7 @@ export function RunnerPage() {
   const [overview, setOverview] = useState<RunnerOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [restartingId, setRestartingId] = useState<string | null>(null);
   const pollRef = useRef<number | null>(null);
 
   const fetchOverview = useCallback(async (silent = false) => {
@@ -276,6 +317,28 @@ export function RunnerPage() {
         );
       } finally {
         setCancellingId(null);
+        await fetchOverview(true);
+      }
+    },
+    [fetchOverview]
+  );
+
+  const handleRestart = useCallback(
+    async (runner: RunnerStatus) => {
+      setRestartingId(runner.runner_id);
+      try {
+        const result = await runnerClient.restartRunner(runner.runner_id);
+        message.success(
+          result.failed_runs > 0
+            ? `Restart pedido — ${result.failed_runs} job em execução foi interrompido. O runner volta em alguns segundos.`
+            : "Restart pedido — o runner volta em alguns segundos."
+        );
+      } catch (err) {
+        message.error(
+          err instanceof Error ? err.message : "Falha ao pedir o restart"
+        );
+      } finally {
+        setRestartingId(null);
         await fetchOverview(true);
       }
     },
@@ -330,7 +393,14 @@ export function RunnerPage() {
                 </span>
               </DataCard>
             ) : (
-              runners.map((r) => <RunnerCard key={r.runner_id} runner={r} />)
+              runners.map((r) => (
+                <RunnerCard
+                  key={r.runner_id}
+                  runner={r}
+                  onRestart={handleRestart}
+                  restarting={restartingId === r.runner_id}
+                />
+              ))
             )}
           </section>
 

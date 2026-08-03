@@ -19,6 +19,15 @@ export interface RunnerStatus {
   poll_interval: string | null
   dry_run: boolean | null
   version: string | null
+  /** Restart asked for, not yet picked up by a heartbeat. */
+  restart_pending: boolean
+}
+
+export interface RestartResult {
+  runner_id: string
+  requested_at: string
+  /** In-flight runs failed by the restart. */
+  failed_runs: number
 }
 
 export interface QueueItem {
