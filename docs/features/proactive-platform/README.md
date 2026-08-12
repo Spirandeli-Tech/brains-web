@@ -27,7 +27,7 @@ Acordo, abro o Brains, e a primeira tela diz:
 >   seu OK pra publicar. [ver] [aprovar]
 > - O PR do BEON-123 recebeu feedback do fulano. Já preparei os fixes na
 >   worktree — aprova o commit? [ver diff] [aprovar]
-> - 3 tickets da NovoED estão no sprint sem spec técnica. Rodo o
+> - 3 tickets da Ecointeractive estão no sprint sem spec técnica. Rodo o
 >   `/enrich-ticket` neles? [sim] [dispensar]
 > - A automação `daily-status` rodou às 08:00. [resumo]
 > - ⚠ A automação X falhou ontem à noite. [log]
