@@ -33,6 +33,18 @@ export interface SendMessagePayload {
   artifact_url?: string
 }
 
+export type RitualWeekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
+
+export interface RitualData {
+  name: string
+  agent_slug: string
+  skill: string
+  weekday: RitualWeekday | null
+  day_of_month: number | null
+  time: string
+  last_fired: string | null
+}
+
 export interface TaskData {
   id: string
   agent_slug: string

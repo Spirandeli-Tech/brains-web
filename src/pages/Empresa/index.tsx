@@ -2,17 +2,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, Spin, message } from "antd";
 import { ReloadOutlined } from "@ant-design/icons";
 import empresaClient from "@/lib/clients/empresa";
-import type { AgentData, MessageData, TaskData } from "@/lib/clients/empresa";
+import type { AgentData, MessageData, RitualData, TaskData } from "@/lib/clients/empresa";
 import { PageHeader, DataCard } from "@/components/molecules";
 import { OrgChart } from "./components/OrgChart";
 import { CompanyFeed } from "./components/CompanyFeed";
 import { TaskQueue } from "./components/TaskQueue";
+import { RituaisCard } from "./components/RituaisCard";
 import { EMPRESA_POLL_INTERVAL_MS } from "./utils";
 
 export function EmpresaPage() {
   const [agents, setAgents] = useState<AgentData[]>([]);
   const [feed, setFeed] = useState<MessageData[]>([]);
   const [tasks, setTasks] = useState<TaskData[]>([]);
+  const [rituais, setRituais] = useState<RitualData[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
 
@@ -21,14 +23,16 @@ export function EmpresaPage() {
   const fetchAll = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [agentsData, feedData, tasksData] = await Promise.all([
+      const [agentsData, feedData, tasksData, rituaisData] = await Promise.all([
         empresaClient.listAgents(),
         empresaClient.listFeed(),
         empresaClient.listTasks(),
+        empresaClient.listRituais(),
       ]);
       setAgents(agentsData);
       setFeed(feedData);
       setTasks(tasksData);
+      setRituais(rituaisData);
     } catch (err) {
       if (!silent) {
         message.error(err instanceof Error ? err.message : "Falha ao carregar a empresa");
@@ -94,6 +98,13 @@ export function EmpresaPage() {
               Organograma vivo
             </h2>
             <OrgChart agents={agents} />
+          </DataCard>
+
+          <DataCard>
+            <h2 className="text-base font-semibold text-text-primary m-0 mb-4">
+              Rituais — a agenda da empresa
+            </h2>
+            <RituaisCard rituais={rituais} agents={agents} />
           </DataCard>
 
           <DataCard>

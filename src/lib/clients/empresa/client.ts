@@ -1,5 +1,5 @@
 import { ApiClient } from '../api-client'
-import type { AgentData, MessageData, SendMessagePayload, TaskData } from './types'
+import type { AgentData, MessageData, RitualData, SendMessagePayload, TaskData } from './types'
 
 export class EmpresaClient {
   private client: ApiClient
@@ -23,5 +23,9 @@ export class EmpresaClient {
 
   async listTasks(limit = 100): Promise<TaskData[]> {
     return this.client.get<TaskData[]>(`/empresa/tasks?limit=${limit}`)
+  }
+
+  async listRituais(): Promise<RitualData[]> {
+    return this.client.get<RitualData[]>('/empresa/rituais')
   }
 }
