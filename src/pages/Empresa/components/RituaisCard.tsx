@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Empty, Modal, Spin, message } from "antd";
+import { Button, Empty, Modal, Spin, message } from "antd";
+import { PlayCircleOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import empresaClient from "@/lib/clients/empresa";
 import type { AgentData, RitualData, RitualWeekday, SkillDoc } from "@/lib/clients/empresa";
@@ -9,6 +10,8 @@ import { avatarClassForArea } from "../utils";
 interface RituaisCardProps {
   rituais: RitualData[];
   agents: AgentData[];
+  /** Chamado após um ritual ser disparado com sucesso (para o pai atualizar fila/feed). */
+  onExecuted?: () => void;
 }
 
 const WEEKDAY_LABEL: Record<RitualWeekday, string> = {
@@ -40,10 +43,24 @@ function agentInfo(slug: string, agents: AgentData[]) {
 }
 
 /** Lista compacta dos rituais agendados da empresa (tarefas recorrentes dos agentes). */
-export function RituaisCard({ rituais, agents }: RituaisCardProps) {
+export function RituaisCard({ rituais, agents, onExecuted }: RituaisCardProps) {
   const [selected, setSelected] = useState<RitualData | null>(null);
   const [doc, setDoc] = useState<SkillDoc | null>(null);
   const [docLoading, setDocLoading] = useState(false);
+  const [executing, setExecuting] = useState<string | null>(null);
+
+  const executarRitual = async (ritual: RitualData) => {
+    setExecuting(ritual.name);
+    try {
+      await empresaClient.executarRitual(ritual.name);
+      message.success("Ritual disparado — acompanhe na fila e no feed");
+      onExecuted?.();
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : "Falha ao disparar o ritual");
+    } finally {
+      setExecuting(null);
+    }
+  };
 
   const openRitual = async (ritual: RitualData) => {
     setSelected(ritual);
@@ -94,6 +111,18 @@ export function RituaisCard({ rituais, agents }: RituaisCardProps) {
                 {lastFiredLabel(ritual.last_fired)}
               </span>
             </div>
+            <Button
+              size="small"
+              icon={<PlayCircleOutlined />}
+              loading={executing === ritual.name}
+              onClick={(e) => {
+                e.stopPropagation();
+                executarRitual(ritual);
+              }}
+              className="shrink-0"
+            >
+              Executar agora
+            </Button>
           </div>
         );
       })}

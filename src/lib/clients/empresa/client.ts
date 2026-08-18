@@ -38,6 +38,15 @@ export class EmpresaClient {
     return this.client.get<RitualData[]>('/empresa/rituais')
   }
 
+  /** Dispara um ritual imediatamente (vira agent_task na fila) e retorna a task criada. */
+  async executarRitual(name: string): Promise<TaskData> {
+    return this.client.post<TaskData>(
+      `/empresa/rituais/${encodeURIComponent(name)}/executar`,
+      null,
+      true,
+    )
+  }
+
   /** O SKILL.md (markdown) de uma skill da empresa. */
   async getSkillDoc(skill: string): Promise<SkillDoc> {
     return this.client.get<SkillDoc>(`/empresa/skills/${encodeURIComponent(skill)}`)

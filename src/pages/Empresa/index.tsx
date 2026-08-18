@@ -196,7 +196,7 @@ export function EmpresaPage() {
             <h2 className="text-base font-semibold text-text-primary m-0 mb-4">
               Rituais — a agenda da empresa
             </h2>
-            <RituaisCard rituais={rituais} agents={agents} />
+            <RituaisCard rituais={rituais} agents={agents} onExecuted={() => fetchAll(true)} />
           </DataCard>
 
           <DataCard>
