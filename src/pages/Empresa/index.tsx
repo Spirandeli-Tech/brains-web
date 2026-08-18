@@ -118,7 +118,7 @@ export function EmpresaPage() {
             <h2 className="text-base font-semibold text-text-primary m-0 mb-4">
               Fila de execução
             </h2>
-            <TaskQueue tasks={tasks} />
+            <TaskQueue tasks={tasks} agents={agents} />
           </DataCard>
         </>
       )}

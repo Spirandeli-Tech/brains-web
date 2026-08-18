@@ -1,5 +1,13 @@
 import { ApiClient } from '../api-client'
-import type { AgentData, MessageData, RitualData, SendMessagePayload, TaskData } from './types'
+import type {
+  AgentData,
+  MessageData,
+  RitualData,
+  SendMessagePayload,
+  SkillDoc,
+  TaskData,
+  TaskDetailData,
+} from './types'
 
 export class EmpresaClient {
   private client: ApiClient
@@ -27,5 +35,15 @@ export class EmpresaClient {
 
   async listRituais(): Promise<RitualData[]> {
     return this.client.get<RitualData[]>('/empresa/rituais')
+  }
+
+  /** O SKILL.md (markdown) de uma skill da empresa. */
+  async getSkillDoc(skill: string): Promise<SkillDoc> {
+    return this.client.get<SkillDoc>(`/empresa/skills/${encodeURIComponent(skill)}`)
+  }
+
+  /** Detalhe de uma task, incluindo o transcript (log) da execução. */
+  async getTask(id: string): Promise<TaskDetailData> {
+    return this.client.get<TaskDetailData>(`/empresa/tasks/${encodeURIComponent(id)}`)
   }
 }

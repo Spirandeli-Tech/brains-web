@@ -1,25 +1,17 @@
 import { useMemo, useState } from "react";
 import { Empty, Segmented, Table } from "antd";
 import type { TableProps } from "antd";
-import type { TaskData, TaskStatus } from "@/lib/clients/empresa";
+import type { AgentData, TaskData, TaskStatus } from "@/lib/clients/empresa";
 import { StatusPill } from "@/components/atoms";
-import { formatUsd, relative } from "../utils";
+import { TASK_STATUS_PILL, formatUsd, relative } from "../utils";
+import { TaskDetailModal } from "./TaskDetailModal";
 
 interface TaskQueueProps {
   tasks: TaskData[];
+  agents: AgentData[];
 }
 
 type TaskFilter = "all" | TaskStatus;
-
-const STATUS_PILL: Record<
-  TaskStatus,
-  { variant: "success" | "warning" | "danger" | "info" | "default"; label: string }
-> = {
-  queued: { variant: "warning", label: "na fila" },
-  running: { variant: "info", label: "rodando" },
-  done: { variant: "success", label: "concluída" },
-  failed: { variant: "danger", label: "falhou" },
-};
 
 const FILTER_OPTIONS: { label: string; value: TaskFilter }[] = [
   { label: "Todas", value: "all" },
@@ -55,7 +47,9 @@ const columns: TableProps<TaskData>["columns"] = [
     dataIndex: "status",
     key: "status",
     render: (status: TaskStatus) => (
-      <StatusPill variant={STATUS_PILL[status].variant}>{STATUS_PILL[status].label}</StatusPill>
+      <StatusPill variant={TASK_STATUS_PILL[status].variant}>
+        {TASK_STATUS_PILL[status].label}
+      </StatusPill>
     ),
   },
   {
@@ -76,8 +70,9 @@ const columns: TableProps<TaskData>["columns"] = [
   },
 ];
 
-export function TaskQueue({ tasks }: TaskQueueProps) {
+export function TaskQueue({ tasks, agents }: TaskQueueProps) {
   const [filter, setFilter] = useState<TaskFilter>("all");
+  const [selectedTask, setSelectedTask] = useState<TaskData | null>(null);
 
   const filteredTasks = useMemo(() => {
     if (filter === "all") return tasks;
@@ -96,6 +91,10 @@ export function TaskQueue({ tasks }: TaskQueueProps) {
         dataSource={filteredTasks}
         rowKey="id"
         size="small"
+        onRow={(record) => ({
+          onClick: () => setSelectedTask(record),
+          className: "cursor-pointer",
+        })}
         pagination={{ pageSize: 20, hideOnSinglePage: true }}
         locale={{
           emptyText: (
@@ -109,6 +108,11 @@ export function TaskQueue({ tasks }: TaskQueueProps) {
             />
           ),
         }}
+      />
+      <TaskDetailModal
+        task={selectedTask}
+        agents={agents}
+        onClose={() => setSelectedTask(null)}
       />
     </div>
   );

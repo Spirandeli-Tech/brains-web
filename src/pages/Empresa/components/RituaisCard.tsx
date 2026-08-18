@@ -1,6 +1,8 @@
-import { Empty } from "antd";
+import { useState } from "react";
+import { Empty, Modal, Spin, message } from "antd";
 import dayjs from "dayjs";
-import type { AgentData, RitualData, RitualWeekday } from "@/lib/clients/empresa";
+import empresaClient from "@/lib/clients/empresa";
+import type { AgentData, RitualData, RitualWeekday, SkillDoc } from "@/lib/clients/empresa";
 import { AgentAvatar } from "./AgentAvatar";
 import { avatarClassForArea } from "../utils";
 
@@ -39,6 +41,25 @@ function agentInfo(slug: string, agents: AgentData[]) {
 
 /** Lista compacta dos rituais agendados da empresa (tarefas recorrentes dos agentes). */
 export function RituaisCard({ rituais, agents }: RituaisCardProps) {
+  const [selected, setSelected] = useState<RitualData | null>(null);
+  const [doc, setDoc] = useState<SkillDoc | null>(null);
+  const [docLoading, setDocLoading] = useState(false);
+
+  const openRitual = async (ritual: RitualData) => {
+    setSelected(ritual);
+    setDoc(null);
+    setDocLoading(true);
+    try {
+      const skillDoc = await empresaClient.getSkillDoc(ritual.skill);
+      setDoc(skillDoc);
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : "Falha ao carregar a skill");
+      setSelected(null);
+    } finally {
+      setDocLoading(false);
+    }
+  };
+
   if (rituais.length === 0) {
     return (
       <Empty
@@ -48,6 +69,8 @@ export function RituaisCard({ rituais, agents }: RituaisCardProps) {
     );
   }
 
+  const selectedAgent = selected ? agentInfo(selected.agent_slug, agents) : null;
+
   return (
     <div className="flex flex-col gap-2">
       {rituais.map((ritual) => {
@@ -55,7 +78,8 @@ export function RituaisCard({ rituais, agents }: RituaisCardProps) {
         return (
           <div
             key={ritual.name}
-            className="flex items-center gap-3 bg-bg-card border border-border-subtle rounded-xl px-3 py-2"
+            onClick={() => openRitual(ritual)}
+            className="flex items-center gap-3 bg-bg-card border border-border-subtle rounded-xl px-3 py-2 cursor-pointer hover:bg-bg-hover transition-colors"
           >
             <AgentAvatar name={agent.name} colorClass={agent.colorClass} size="sm" />
             <div className="flex flex-col gap-0.5 min-w-0 flex-1">
@@ -73,6 +97,28 @@ export function RituaisCard({ rituais, agents }: RituaisCardProps) {
           </div>
         );
       })}
+
+      <Modal
+        open={selected != null}
+        onCancel={() => setSelected(null)}
+        footer={null}
+        width={720}
+        title={
+          selected
+            ? `${selected.skill} — ${selectedAgent?.name ?? selected.agent_slug}`
+            : undefined
+        }
+      >
+        {docLoading ? (
+          <div className="flex justify-center py-10">
+            <Spin />
+          </div>
+        ) : (
+          <pre className="whitespace-pre-wrap text-[13px] leading-relaxed text-text-primary m-0 max-h-[60vh] overflow-y-auto">
+            {doc?.content ?? ""}
+          </pre>
+        )}
+      </Modal>
     </div>
   );
 }

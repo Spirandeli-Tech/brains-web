@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
 import "dayjs/locale/pt-br";
+import type { TaskStatus } from "@/lib/clients/empresa";
 
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
@@ -52,3 +53,14 @@ export function formatUsd(value: number | null | undefined): string {
   if (value == null) return "—";
   return `US$ ${value.toFixed(2)}`;
 }
+
+/** Variante e rótulo do StatusPill por status de task (compartilhado entre fila e detalhe). */
+export const TASK_STATUS_PILL: Record<
+  TaskStatus,
+  { variant: "success" | "warning" | "danger" | "info" | "default"; label: string }
+> = {
+  queued: { variant: "warning", label: "na fila" },
+  running: { variant: "info", label: "rodando" },
+  done: { variant: "success", label: "concluída" },
+  failed: { variant: "danger", label: "falhou" },
+};

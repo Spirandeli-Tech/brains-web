@@ -46,6 +46,12 @@ export interface RitualData {
   last_fired: string | null
 }
 
+/** SKILL.md (markdown) de uma skill da empresa. */
+export interface SkillDoc {
+  skill: string
+  content: string
+}
+
 export interface TaskData {
   id: string
   agent_slug: string
@@ -60,4 +66,9 @@ export interface TaskData {
   result_summary: string | null
   cost_usd: number | null
   created_at: string
+}
+
+/** Detalhe de uma task: todos os campos + o transcript da execução (atualizado ao vivo enquanto roda). */
+export interface TaskDetailData extends TaskData {
+  log: string | null
 }
