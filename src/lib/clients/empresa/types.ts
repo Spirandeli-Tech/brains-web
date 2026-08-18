@@ -14,6 +14,7 @@ export interface AgentData {
   enabled: boolean
   status: AgentStatus
   current_skill: string | null
+  current_task_detail: string | null
   queued_count: number
   total_cost_usd: number
 }

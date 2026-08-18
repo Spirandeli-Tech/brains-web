@@ -7,6 +7,7 @@ import {
   INVESTOR_AVATAR_CLASS,
   INVESTOR_SLUG,
   avatarClassForArea,
+  borderClassForArea,
   formatUsd,
 } from "../utils";
 
@@ -29,14 +30,33 @@ function agentStatusPill(agent: AgentData) {
 }
 
 function AgentCard({ agent }: { agent: AgentData }) {
+  const isRunning = agent.status === "running";
+  const borderClass = isRunning
+    ? `border-2 ${borderClassForArea(agent.area)} shadow-md`
+    : "border border-border-subtle shadow-card";
   return (
-    <div className="flex flex-col items-center gap-1.5 bg-bg-card border border-border-subtle rounded-xl shadow-card px-4 py-3 w-44">
+    <div
+      className={`relative flex flex-col items-center gap-1.5 bg-bg-card ${borderClass} rounded-xl px-4 py-3 w-44`}
+    >
+      {isRunning && (
+        <span
+          className={`absolute top-1.5 right-1.5 h-2 w-2 rounded-full animate-pulse ${avatarClassForArea(agent.area)}`}
+        />
+      )}
       <AgentAvatar name={agent.human_name} colorClass={avatarClassForArea(agent.area)} />
       <div className="text-sm font-bold text-text-primary text-center leading-tight">
         {agent.human_name}
       </div>
       <div className="text-xs text-text-secondary text-center leading-tight">{agent.role}</div>
       {agentStatusPill(agent)}
+      {isRunning && agent.current_task_detail && (
+        <div
+          className="text-xs text-text-secondary text-center leading-tight line-clamp-2"
+          title={agent.current_task_detail}
+        >
+          {agent.current_task_detail}
+        </div>
+      )}
       {agent.total_cost_usd > 0 && (
         <div className="text-[11px] text-text-muted">{formatUsd(agent.total_cost_usd)}</div>
       )}

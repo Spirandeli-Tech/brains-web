@@ -20,12 +20,26 @@ const AREA_AVATAR_CLASS: Record<string, string> = {
   transversal: "bg-violet-500",
 };
 
+/** Cor da borda por área do agente (classes estáticas — mesmas cores dos avatares). */
+const AREA_BORDER_CLASS: Record<string, string> = {
+  executivo: "border-amber-500",
+  tecnologia: "border-blue-500",
+  financeiro: "border-green-500",
+  marketing: "border-pink-500",
+  transversal: "border-violet-500",
+};
+
 /** O investidor tem cor própria: dourado. */
 export const INVESTOR_AVATAR_CLASS = "bg-yellow-500";
 
 export function avatarClassForArea(area: string | null | undefined): string {
   if (!area) return "bg-gray-400";
   return AREA_AVATAR_CLASS[area] ?? "bg-gray-400";
+}
+
+export function borderClassForArea(area: string | null | undefined): string {
+  if (!area) return "border-gray-400";
+  return AREA_BORDER_CLASS[area] ?? "border-gray-400";
 }
 
 /** API datetimes são UTC naive — parseia como UTC antes de comparar com agora. */
