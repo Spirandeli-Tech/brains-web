@@ -15,6 +15,7 @@ export const INVESTOR_SLUG = "investidor";
 /** Cor do avatar por área do agente. */
 const AREA_AVATAR_CLASS: Record<string, string> = {
   executivo: "bg-amber-500",
+  produto: "bg-cyan-600",
   tecnologia: "bg-blue-500",
   financeiro: "bg-green-500",
   marketing: "bg-pink-500",
@@ -24,6 +25,7 @@ const AREA_AVATAR_CLASS: Record<string, string> = {
 /** Cor da borda por área do agente (classes estáticas — mesmas cores dos avatares). */
 const AREA_BORDER_CLASS: Record<string, string> = {
   executivo: "border-amber-500",
+  produto: "border-cyan-600",
   tecnologia: "border-blue-500",
   financeiro: "border-green-500",
   marketing: "border-pink-500",
