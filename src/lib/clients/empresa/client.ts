@@ -1,6 +1,7 @@
 import { ApiClient } from '../api-client'
 import type {
   AgentData,
+  DiagnosticoData,
   MessageData,
   RitualData,
   SendMessagePayload,
@@ -45,5 +46,10 @@ export class EmpresaClient {
   /** Detalhe de uma task, incluindo o transcript (log) da execução. */
   async getTask(id: string): Promise<TaskDetailData> {
     return this.client.get<TaskDetailData>(`/empresa/tasks/${encodeURIComponent(id)}`)
+  }
+
+  /** Diagnóstico da corrente: por que a empresa está (ou não) parada. */
+  async getDiagnostico(): Promise<DiagnosticoData> {
+    return this.client.get<DiagnosticoData>('/empresa/diagnostico')
   }
 }

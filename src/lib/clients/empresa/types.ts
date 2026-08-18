@@ -72,3 +72,15 @@ export interface TaskData {
 export interface TaskDetailData extends TaskData {
   log: string | null
 }
+
+/** Um item do diagnóstico "por que a empresa está parada?". */
+export interface DiagnosticoCheck {
+  nome: string
+  ok: boolean
+  detalhe: string
+}
+
+export interface DiagnosticoData {
+  checks: DiagnosticoCheck[]
+  motivos: string[]
+}
