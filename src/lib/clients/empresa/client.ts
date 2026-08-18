@@ -2,6 +2,7 @@ import { ApiClient } from '../api-client'
 import type {
   AgentData,
   DiagnosticoData,
+  EstadoData,
   MessageData,
   RitualData,
   SendMessagePayload,
@@ -55,6 +56,16 @@ export class EmpresaClient {
   /** Detalhe de uma task, incluindo o transcript (log) da execução. */
   async getTask(id: string): Promise<TaskDetailData> {
     return this.client.get<TaskDetailData>(`/empresa/tasks/${encodeURIComponent(id)}`)
+  }
+
+  /** Estado geral da empresa (desligada/ligada pelo investidor). */
+  async getEstado(): Promise<EstadoData> {
+    return this.client.get<EstadoData>('/empresa/estado')
+  }
+
+  /** Liga/desliga a empresa: nada novo inicia enquanto pausada. */
+  async setEstado(pausada: boolean): Promise<EstadoData> {
+    return this.client.post<EstadoData>('/empresa/estado', { pausada }, true)
   }
 
   /** Diagnóstico da corrente: por que a empresa está (ou não) parada. */

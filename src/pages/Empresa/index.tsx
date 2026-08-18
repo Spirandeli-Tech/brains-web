@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Modal, Spin, message } from "antd";
+import { Alert, Button, Modal, Popconfirm, Spin, message } from "antd";
 import {
   CheckCircleFilled,
   CloseCircleFilled,
+  PoweroffOutlined,
   QuestionCircleOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
@@ -26,6 +27,8 @@ export function EmpresaPage() {
   const [feed, setFeed] = useState<MessageData[]>([]);
   const [tasks, setTasks] = useState<TaskData[]>([]);
   const [rituais, setRituais] = useState<RitualData[]>([]);
+  const [pausada, setPausada] = useState(false);
+  const [togglingEstado, setTogglingEstado] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [diagnosticoOpen, setDiagnosticoOpen] = useState(false);
@@ -37,16 +40,18 @@ export function EmpresaPage() {
   const fetchAll = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [agentsData, feedData, tasksData, rituaisData] = await Promise.all([
+      const [agentsData, feedData, tasksData, rituaisData, estadoData] = await Promise.all([
         empresaClient.listAgents(),
         empresaClient.listFeed(),
         empresaClient.listTasks(),
         empresaClient.listRituais(),
+        empresaClient.getEstado(),
       ]);
       setAgents(agentsData);
       setFeed(feedData);
       setTasks(tasksData);
       setRituais(rituaisData);
+      setPausada(estadoData.pausada);
     } catch (err) {
       if (!silent) {
         message.error(err instanceof Error ? err.message : "Falha ao carregar a empresa");
@@ -103,6 +108,24 @@ export function EmpresaPage() {
     fetchDiagnostico();
   }, [fetchDiagnostico]);
 
+  const handleToggleEstado = useCallback(async () => {
+    setTogglingEstado(true);
+    try {
+      const estado = await empresaClient.setEstado(!pausada);
+      setPausada(estado.pausada);
+      message.success(
+        estado.pausada
+          ? "Empresa desligada — nada novo inicia até religar"
+          : "Empresa religada — os rituais voltam a rodar",
+      );
+      await fetchAll(true);
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : "Falha ao mudar o estado da empresa");
+    } finally {
+      setTogglingEstado(false);
+    }
+  }, [pausada, fetchAll]);
+
   const initialLoading = loading && agents.length === 0 && feed.length === 0 && tasks.length === 0;
 
   return (
@@ -112,6 +135,29 @@ export function EmpresaPage() {
         subtitle="Organograma vivo, feed de mensagens e fila de execução dos agentes de IA"
         actions={
           <>
+            {pausada ? (
+              <Button
+                type="primary"
+                icon={<PoweroffOutlined />}
+                loading={togglingEstado}
+                onClick={handleToggleEstado}
+              >
+                Religar empresa
+              </Button>
+            ) : (
+              <Popconfirm
+                title="Desligar empresa"
+                description="Nada novo vai iniciar; execuções em andamento concluem. Desligar?"
+                okText="Desligar"
+                cancelText="Cancelar"
+                okButtonProps={{ danger: true }}
+                onConfirm={handleToggleEstado}
+              >
+                <Button danger icon={<PoweroffOutlined />} loading={togglingEstado}>
+                  Desligar empresa
+                </Button>
+              </Popconfirm>
+            )}
             <Button icon={<QuestionCircleOutlined />} onClick={handleOpenDiagnostico}>
               Por que está parado?
             </Button>
@@ -185,6 +231,15 @@ export function EmpresaPage() {
         </DataCard>
       ) : (
         <>
+          {pausada && (
+            <Alert
+              type="error"
+              banner
+              showIcon={false}
+              message="🔴 Empresa desligada pelo investidor — nada novo inicia até religar."
+            />
+          )}
+
           <DataCard>
             <h2 className="text-base font-semibold text-text-primary m-0 mb-4">
               Organograma vivo
@@ -196,7 +251,12 @@ export function EmpresaPage() {
             <h2 className="text-base font-semibold text-text-primary m-0 mb-4">
               Rituais — a agenda da empresa
             </h2>
-            <RituaisCard rituais={rituais} agents={agents} onExecuted={() => fetchAll(true)} />
+            <RituaisCard
+              rituais={rituais}
+              agents={agents}
+              disabled={pausada}
+              onExecuted={() => fetchAll(true)}
+            />
           </DataCard>
 
           <DataCard>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Empty, Modal, Spin, message } from "antd";
+import { Button, Empty, Modal, Spin, Tooltip, message } from "antd";
 import { PlayCircleOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import empresaClient from "@/lib/clients/empresa";
@@ -10,6 +10,8 @@ import { avatarClassForArea } from "../utils";
 interface RituaisCardProps {
   rituais: RitualData[];
   agents: AgentData[];
+  /** Quando a empresa está desligada: desabilita o "Executar agora" de todos os rituais. */
+  disabled?: boolean;
   /** Chamado após um ritual ser disparado com sucesso (para o pai atualizar fila/feed). */
   onExecuted?: () => void;
 }
@@ -43,7 +45,7 @@ function agentInfo(slug: string, agents: AgentData[]) {
 }
 
 /** Lista compacta dos rituais agendados da empresa (tarefas recorrentes dos agentes). */
-export function RituaisCard({ rituais, agents, onExecuted }: RituaisCardProps) {
+export function RituaisCard({ rituais, agents, disabled = false, onExecuted }: RituaisCardProps) {
   const [selected, setSelected] = useState<RitualData | null>(null);
   const [doc, setDoc] = useState<SkillDoc | null>(null);
   const [docLoading, setDocLoading] = useState(false);
@@ -111,18 +113,21 @@ export function RituaisCard({ rituais, agents, onExecuted }: RituaisCardProps) {
                 {lastFiredLabel(ritual.last_fired)}
               </span>
             </div>
-            <Button
-              size="small"
-              icon={<PlayCircleOutlined />}
-              loading={executing === ritual.name}
-              onClick={(e) => {
-                e.stopPropagation();
-                executarRitual(ritual);
-              }}
-              className="shrink-0"
-            >
-              Executar agora
-            </Button>
+            <Tooltip title={disabled ? "Empresa desligada" : undefined}>
+              <Button
+                size="small"
+                icon={<PlayCircleOutlined />}
+                disabled={disabled}
+                loading={executing === ritual.name}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  executarRitual(ritual);
+                }}
+                className="shrink-0"
+              >
+                Executar agora
+              </Button>
+            </Tooltip>
           </div>
         );
       })}

@@ -73,6 +73,11 @@ export interface TaskDetailData extends TaskData {
   log: string | null
 }
 
+/** Estado geral da empresa: desligada (pausada) ou ligada. */
+export interface EstadoData {
+  pausada: boolean
+}
+
 /** Um item do diagnóstico "por que a empresa está parada?". */
 export interface DiagnosticoCheck {
   nome: string
