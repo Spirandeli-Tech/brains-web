@@ -25,6 +25,7 @@ import { WatchersPage } from "@/pages/Watchers";
 import { InsightsPage } from "@/pages/Insights";
 import { RunnerPage } from "@/pages/Runner";
 import { CodeReviewPage } from "@/pages/CodeReview";
+import { EmpresaPage } from "@/pages/Empresa";
 import { AddressPrPage } from "@/pages/AddressPr";
 import { IdeasPage } from "@/pages/Ideas";
 import { IdeaDetailPage } from "@/pages/Ideas/IdeaDetail";
@@ -90,6 +91,7 @@ const router = createBrowserRouter([
         ],
       },
       { path: "watchers", element: <WatchersPage /> },
+      { path: "empresa", element: <EmpresaPage /> },
       { path: "insights", element: <InsightsPage /> },
       { path: "runner", element: <RunnerPage /> },
       { path: "users", element: <UsersPage /> },

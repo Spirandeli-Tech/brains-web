@@ -172,6 +172,11 @@ export const NAV_OPTIONS: NavOption[] = [
     ],
   },
   {
+    label: 'Empresa',
+    icon: <TeamOutlined />,
+    path: '/empresa',
+  },
+  {
     label: 'Users',
     icon: <TeamOutlined />,
     path: '/users',
