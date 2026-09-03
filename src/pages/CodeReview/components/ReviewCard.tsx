@@ -491,8 +491,14 @@ export function ReviewCard({
 }: ReviewCardProps) {
   const tag = RUN_STATUS_TAG[run.status];
   const isTerminal = run.status === "done" || run.status === "cancelled";
+  // Cancelled is restartable too: the watcher now archives reviews on its own
+  // (merged PR, no longer your review), so a false positive needs a one-click
+  // way back instead of relaunching the PR by hand.
   const canRestart =
-    run.status === "running" || run.status === "failed" || run.status === "queued";
+    run.status === "running" ||
+    run.status === "failed" ||
+    run.status === "queued" ||
+    run.status === "cancelled";
   const doneCount = run.steps.filter((s) => s.status === "done" || s.status === "skipped").length;
 
   // Status hint
@@ -509,6 +515,12 @@ export function ReviewCard({
     }
     if (run.status === "failed") {
       return { type: "error" as const, title: "Run failed", detail: run.error || "A step failed." };
+    }
+    if (run.status === "cancelled" && run.error) {
+      // The watcher archives reviews whose PR was merged/closed or that no
+      // longer need you, and leaves the reason on the run — show it, or the
+      // card just reads "Cancelled" with no explanation.
+      return { type: "info" as const, title: "Review arquivada", detail: run.error };
     }
     return null;
   })();
